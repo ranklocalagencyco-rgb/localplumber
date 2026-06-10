@@ -4,6 +4,7 @@ export const prerender = true;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Icon from '../../components/Icon.astro';
 import { supabase } from '../../lib/supabase';
+import { buildAllTownSchemas, buildFaqItems } from '../../lib/schema-builders';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -14,12 +15,14 @@ interface TownRow {
   slug:       string;
   latitude:   number | null;
   longitude:  number | null;
+  created_at: string;
 }
 
 interface CountyRow {
-  id:   number;
-  name: string;
-  slug: string;
+  id:         number;
+  name:       string;
+  slug:       string;
+  created_at: string;
 }
 
 // ── Area context ──────────────────────────────────────────────────────────────
@@ -125,6 +128,112 @@ const areaContext = {
     plumbingNote:  'Older mansion blocks in Mayfair frequently have communal hot water systems serving multiple flats. Individual flat issues can trace back to building-wide infrastructure.',
     responseNote:  'W1 is central London. The easiest place to reach quickly from almost anywhere.',
   },
+
+  // ── UB POSTCODES — HILLINGDON ──────────────────────────────────────────
+
+  'uxbridge': {
+    description:  'Uxbridge is built on a mix of eras. The town centre has 1960s and 70s commercial stock alongside newer apartment blocks built around the tube station. Head out along the Hillingdon Hill roads and you hit proper interwar semis — the kind built fast in the 1930s to house workers coming out of the factories that lined the western corridors. Brunel University adds a student population that keeps the rental sector busy year round.',
+    plumbingNote: 'Hard water is a genuine problem in UB8 — limescale builds in heat exchangers faster than most homeowners realise, and boilers that haven\'t been serviced in three years are often already at reduced efficiency.',
+    responseNote: 'UB8 is accessible from West London within 30-45 minutes. Junction 4 of the M40 makes the area easy to reach from a wide radius.',
+  },
+
+  'hayes': {
+    description:  'Hayes has two faces. The older residential streets — mostly 1930s terraces built to house factory workers — sit alongside the Hayes Village development on the old Nestle site, which has added several hundred new apartments to the area in the last few years. The Elizabeth Line changed the commuter profile here overnight.',
+    plumbingNote: 'The 1930s terrace stock that dominates the residential streets in UB3 and UB4 often has original galvanised steel pipework that corrodes from the inside — discoloured water is usually the first sign.',
+    responseNote: 'Hayes is well-connected via the A4020 and the M4. Most of UB3 and UB4 can be reached within 30-40 minutes.',
+  },
+
+  'southall': {
+    description:  'Southall is one of the densest residential areas in West London. The Broadway is the commercial spine but the housing behind it is almost entirely 1930s terraces, most of which have been in multi-occupancy for decades. HMOs are common, which means shared drainage systems carrying more load than they were designed for.',
+    plumbingNote: 'Shared drainage in HMOs is the most frequent callout in UB1 and UB2 — blockages that affect multiple tenants at once, often caused by years of accumulated buildup in cast iron stacks.',
+    responseNote: 'Southall is easy to reach from West London. The A4020 runs straight through — most jobs accessible within 30 minutes.',
+  },
+
+  'west-drayton': {
+    description:  'West Drayton sits between the M4 and the Grand Union Canal. The housing is a mix of older terraces near the station and 1960s and 70s estates that were built when the area was still semi-industrial. The canal corridor has seen some recent conversion and new-build activity.',
+    plumbingNote: 'The mix of post-war estate housing and older terraces in UB7 means plumbing systems from three different eras sometimes connected to the same drainage — complications during repair work are common.',
+    responseNote: 'UB7 is close to the M4 and easy to reach from most of West London and the Home Counties.',
+  },
+
+  'yiewsley': {
+    description:  'Yiewsley sits immediately east of West Drayton and is mostly 1930s and post-war housing. It is one of the less talked about parts of Hillingdon but has a dense residential population and a lot of privately rented stock in older properties.',
+    plumbingNote: 'Older privately rented stock in Yiewsley often hasn\'t had major plumbing work done in years — landlord callouts for drainage issues and boiler faults are consistent throughout the year.',
+    responseNote: 'UB7 covers both West Drayton and Yiewsley — accessible within 30-40 minutes from West London.',
+  },
+
+  'ruislip': {
+    description:  'Ruislip is interwar suburbia at its most intact. The streets around the Manor and the lido are largely 1920s and 30s detached and semi-detached houses — solid construction, mostly well maintained, but with plumbing systems that have had 80 or 90 years of incremental changes layered on top of the original pipework.',
+    plumbingNote: 'Interwar properties in Ruislip often have a combination of original lead supply pipes and later copper additions — mixed metalwork can cause accelerated corrosion at joints.',
+    responseNote: 'HA4 and HA5 are easy to reach from North West London. Most of Ruislip is within 30-40 minutes.',
+  },
+
+  'northolt': {
+    description:  'Northolt is post-war housing mixed with earlier interwar stock. The area around the A40 has seen some development pressure but the residential streets are predominantly 1940s and 50s construction — solid, functional, and in many cases overdue for plumbing updates.',
+    plumbingNote: 'Post-war properties in UB5 often have copper pipework from original installation that is now 60-70 years old — pinhole leaks in horizontal runs are the most common callout.',
+    responseNote: 'UB5 is close to the A40 — accessible from West London within 25-35 minutes.',
+  },
+
+  'hillingdon': {
+    description:  'Hillingdon village sits between Uxbridge and Hayes and is mostly interwar semi-detached housing on wide residential roads. It is quieter than its neighbours, mostly owner-occupied, and has a higher proportion of older residents which means boiler reliability matters more than in younger demographic areas.',
+    plumbingNote: 'Owner-occupied interwar semis in Hillingdon tend to have had multiple boiler replacements but original pipework — the combination creates pressure imbalance issues that show up as poor flow at upstairs outlets.',
+    responseNote: 'UB10 sits between Uxbridge and Hayes — well-connected and typically reachable within 30 minutes.',
+  },
+
+  'ickenham': {
+    description:  'Ickenham is one of the more suburban corners of Hillingdon. It has a village centre that has largely resisted development and a lot of larger detached houses on generous plots — the kind of properties with garages, utility rooms, and multiple bathrooms that were built in the 1930s and have been extended repeatedly since.',
+    plumbingNote: 'Large interwar detached houses with multiple extensions often have complex pipework routes — tracing leaks or pressure problems requires knowledge of how the original system has been added to over the decades.',
+    responseNote: 'Ickenham is accessible from West London within 30-40 minutes.',
+  },
+
+  // ── SL POSTCODES — SLOUGH AND SURROUNDS ──────────────────────────────
+
+  'slough': {
+    description:  'Slough grew fast in the 1930s to house workers for the Trading Estate — one of the largest industrial estates in Europe at the time. That rapid expansion meant streets of identical terraces were built quickly across Salt Hill, Chalvey, and the surrounding areas. A lot of that housing stock is still standing. The Horlicks Quarter development near the station has added modern apartments alongside it.',
+    plumbingNote: 'The 1930s housing stock across SL1 has pipework that is now approaching a century old in places. Galvanised steel supply pipes corrode from the inside — low pressure and discoloured water are the warning signs before failure.',
+    responseNote: 'Slough is just off the M4 — easy to reach from West London and Berkshire within 30-40 minutes.',
+  },
+
+  'langley': {
+    description:  'Langley sits east of Slough and is mostly post-war housing — 1950s and 60s estates mixed with later infill development. The Elizabeth Line stop has increased development pressure and there are now several new apartment blocks near the station alongside the older residential streets.',
+    plumbingNote: 'Post-war housing in SL3 often has original copper pipework now over 60 years old. The combination of hard Berkshire water and ageing copper produces pinhole leaks, particularly on hot water runs.',
+    responseNote: 'SL3 is close to the M4 Junction 5 — straightforward to reach from both West London and Berkshire.',
+  },
+
+  'windsor': {
+    description:  'Windsor is unusual in that the housing stock ranges from Victorian terraces in the town centre to post-war housing estates to the Georgian and Edwardian properties on the hill above the castle. Each era brings completely different plumbing challenges. The tourism economy means there is a significant short-let and hospitality sector alongside the residential population.',
+    plumbingNote: 'Victorian terraces in Windsor town centre frequently have original drainage that has never been replaced — root ingress from mature street trees is a recurring problem in the older streets.',
+    responseNote: 'SL4 is accessible from West London and Berkshire. The M4 and M3 both run nearby.',
+  },
+
+  'maidenhead': {
+    description:  'Maidenhead has a good spread of housing eras — Victorian and Edwardian near the town centre, interwar semis spreading outward, and newer estates on the fringes. The river brings some flood risk to properties nearest the Thames, which creates specific drainage and damp-related plumbing issues.',
+    plumbingNote: 'Properties near the Thames in SL6 face periodic flood risk — sump pumps and anti-flood valves on drainage systems are common, and they need maintenance to work when it matters.',
+    responseNote: 'SL6 is accessible from both London and Berkshire via the M4 Junction 8/9.',
+  },
+
+  'burnham': {
+    description:  'Burnham sits between Slough and Maidenhead and is largely interwar and post-war suburban housing. It is a residential area without much commercial development — quiet streets of semis and detached houses, most owner-occupied, with a population that has been there long enough for the original plumbing to be showing its age.',
+    plumbingNote: 'Interwar housing in SL1 and SL2 around Burnham often still has original cast iron soil stacks — these corrode silently for years before failing, usually at an inconvenient moment.',
+    responseNote: 'Burnham is between Slough and Maidenhead — accessible within 30-40 minutes from West London.',
+  },
+
+  'cippenham': {
+    description:  'Cippenham is the residential western side of Slough — mostly 1960s and 70s housing estates that were built when the Trading Estate was still expanding. It has a higher proportion of semi-detached and detached houses than the older Slough streets, and a lot of that stock has had incremental improvements over the years.',
+    plumbingNote: '1960s and 70s housing in Cippenham often has copper pipework at the end of its useful life — especially on hot water circuits where the hard water has accelerated corrosion.',
+    responseNote: 'Cippenham is just off the M4 at Junction 6 — very easy to reach from West London.',
+  },
+
+  'farnham-royal': {
+    description:  'Farnham Royal is a village that has become a commuter suburb over the decades. It sits between Slough and Beaconsfield and has a mix of older village properties and later residential development. The housing is mostly detached and semi-detached, owner-occupied, and generally well-maintained.',
+    plumbingNote: 'The mix of property ages in SL2 and SL3 around Farnham Royal means original lead pipework in older properties sits alongside copper installed in the 70s and 80s — both create problems but different ones.',
+    responseNote: 'Farnham Royal is accessible from both the M4 and the M40 — 35-45 minutes from West London.',
+  },
+
+  'stoke-poges': {
+    description:  'Stoke Poges is a village in South Buckinghamshire, just north of Slough. The housing is a mix of older village properties, interwar houses on the edges, and some newer developments. It is largely affluent and owner-occupied.',
+    plumbingNote: 'Older village properties in Stoke Poges frequently have a mix of original and replacement pipework from different eras — tracing faults requires working through layers of previous plumbing decisions.',
+    responseNote: 'SL2 is accessible from both the M4 and M40 — 35-45 minutes from West London.',
+  },
 };
 
 // ── Static paths ──────────────────────────────────────────────────────────────
@@ -200,92 +309,17 @@ const canonicalUrl = `https://www.localplumber.co.uk/${county.slug}/${town.slug}
 const pageTitle    = `Plumber in ${town.name} | Local Gas Safe Engineer | LocalPlumber.co.uk`;
 const pageDescription = `Gas Safe plumber in ${town.name}. One vetted local engineer per postcode outcode, available 24 hours. Direct contact, no shared leads.`;
 
-// ── JSON-LD ───────────────────────────────────────────────────────────────────
+// ── Schemas + FAQ items ───────────────────────────────────────────────────────
 
-const localBusinessSchema = {
-  '@context': 'https://schema.org',
-  '@type':    'Plumber',
-  'name':     `Local Plumber ${town.name}`,
-  'description': context?.description ?? `Vetted local plumber covering ${town.name}.`,
-  'url':      canonicalUrl,
-  'telephone': isAssigned ? partnerPhone : '+448000000000',
-  'areaServed': {
-    '@type': 'City',
-    'name':  town.name,
-    'containedIn': { '@type': 'AdministrativeArea', 'name': county.name },
-  },
-  ...(town.latitude ? {
-    'geo': {
-      '@type':     'GeoCoordinates',
-      'latitude':  town.latitude,
-      'longitude': town.longitude,
-    },
-  } : {}),
-  'openingHoursSpecification': {
-    '@type':      'OpeningHoursSpecification',
-    'dayOfWeek':  ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-    'opens':      '00:00',
-    'closes':     '23:59',
-  },
-  'priceRange':        '££',
-  'paymentAccepted':   'Cash, Credit Card, Bank Transfer',
-  'currenciesAccepted':'GBP',
-};
-
-const breadcrumbSchema = {
-  '@context': 'https://schema.org',
-  '@type':    'BreadcrumbList',
-  'itemListElement': [
-    { '@type': 'ListItem', 'position': 1, 'name': 'Home',       'item': 'https://www.localplumber.co.uk' },
-    { '@type': 'ListItem', 'position': 2, 'name': county.name,  'item': `https://www.localplumber.co.uk/${county.slug}` },
-    { '@type': 'ListItem', 'position': 3, 'name': town.name,    'item': canonicalUrl },
-  ],
-};
-
-const faqItems = [
-  {
-    q: `How quickly can I get a plumber in ${town.name}?`,
-    a: context?.responseNote ?? `Our ${town.name} partner targets a 60-minute response for emergencies like burst pipes, leaks, and drain blockages. Response times vary by time of day and exact location within ${town.name}.`,
-  },
-  {
-    q: `Are your plumbers in ${town.name} Gas Safe registered?`,
-    a: `Yes. Every partner covering ${town.name} is Gas Safe registered and independently vetted before being listed. You can check any engineer's Gas Safe number at the official Gas Safe Register website.`,
-  },
-  {
-    q: `What plumbing services are available in ${town.name}?`,
-    a: `The ${town.name} partner covers emergency plumbing, boiler repair and installation, blocked drains, bathroom fitting, central heating, and landlord gas safety certificates. All residential and most commercial jobs are covered.`,
-  },
-  {
-    q: `Do you charge a call-out fee in ${town.name}?`,
-    a: `Call-out charges depend on the job type and time of day. Your local ${town.name} engineer will confirm any call-out charge before attending. Emergency out-of-hours rates apply outside standard working hours.`,
-  },
-  {
-    q: `Can I get a same-day plumber in ${town.name}?`,
-    a: `For genuine emergencies — burst pipes, leaks, no heating — same-day attendance is the target. For non-urgent jobs like bathroom installations or boiler upgrades, your ${town.name} partner will schedule at a time that suits you.`,
-  },
-  {
-    q: `Is there one plumber exclusively covering ${town.name}?`,
-    a: `Yes. We operate a Rule of One — exactly one vetted firm holds the exclusive territory for each postcode area. When you call or submit a form from ${town.name}, your details go directly to that partner. No shared leads, no competing callbacks.`,
-  },
-  {
-    q: `Do your ${town.name} plumbers work weekends and bank holidays?`,
-    a: `Yes. The ${town.name} partner operates 24 hours a day, 7 days a week including bank holidays. Out-of-hours rates apply for evenings and weekends.`,
-  },
-  {
-    q: `What should I do while waiting for a plumber in ${town.name}?`,
-    a: `If water is leaking, turn off your stop tap first — it's usually under the kitchen sink or where the mains enters the property. For a gas smell, leave the building, don't use switches or flames, and call the National Gas Emergency line on 0800 111 999 before calling a plumber.`,
-  },
-];
-
-const faqSchema = {
-  '@context': 'https://schema.org',
-  '@type':    'FAQPage',
-  'mainEntity': faqItems.map(item => ({
-    '@type': 'Question',
-    'name':  item.q,
-    'acceptedAnswer': { '@type': 'Answer', 'text': item.a },
-  })),
-};
+const faqItems      = buildFaqItems(town, county, context ?? undefined);
+const jsonLdSchemas = buildAllTownSchemas({
+  town,
+  county,
+  canonicalUrl,
+  areaContext:  context ?? undefined,
+  isAssigned,
+  partnerPhone,
+});
 
 // ── Service cards ─────────────────────────────────────────────────────────────
 
@@ -303,7 +337,7 @@ const serviceCards = [
   title={pageTitle}
   description={pageDescription}
   canonicalUrl={canonicalUrl}
-  jsonLdSchemas={[localBusinessSchema, breadcrumbSchema, faqSchema]}
+  jsonLdSchemas={jsonLdSchemas}
   locationName={town.name}
 >
 
@@ -324,7 +358,7 @@ const serviceCards = [
 
       <!-- Area context eyebrow (unique local knowledge) -->
       {context?.description && (
-        <p class="text-gray-500 text-sm max-w-xl mb-4 leading-relaxed">{context.description}</p>
+        <p class="area-description text-gray-500 text-sm max-w-xl mb-4 leading-relaxed">{context.description}</p>
       )}
 
       <!-- H1 -->
@@ -334,7 +368,7 @@ const serviceCards = [
 
       <!-- Plumbing note or generic subtext -->
       {context?.plumbingNote ? (
-        <p class="text-gray-600 text-lg max-w-xl mb-8 leading-relaxed">{context.plumbingNote}</p>
+        <p class="plumbing-note text-gray-600 text-lg max-w-xl mb-8 leading-relaxed">{context.plumbingNote}</p>
       ) : (
         <p class="text-gray-600 text-lg max-w-xl mb-8">
           Gas Safe vetted plumber covering {town.name}. Direct call, no switchboard.
@@ -356,7 +390,7 @@ const serviceCards = [
             Call Now — {displayPhone}
           </a>
           {context?.responseNote && (
-            <span class="inline-flex items-center gap-2 text-sm text-gray-500 border border-gray-200 rounded-full px-4 py-2.5 self-center">
+            <span class="response-note inline-flex items-center gap-2 text-sm text-gray-500 border border-gray-200 rounded-full px-4 py-2.5 self-center">
               <span class="w-2 h-2 rounded-full bg-green-400 flex-shrink-0 animate-pulse" aria-hidden="true"></span>
               {context.responseNote}
             </span>
@@ -435,7 +469,7 @@ const serviceCards = [
         {town.name} — At a Glance
       </h2>
       <div class="overflow-x-auto">
-        <table class="w-full text-sm border-collapse" role="table">
+        <table class="at-a-glance-table w-full text-sm border-collapse" role="table">
           <caption class="sr-only">Local plumbing service information for {town.name}</caption>
           <tbody>
             {[
@@ -478,7 +512,7 @@ const serviceCards = [
               <path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </summary>
-          <p class="px-6 pb-5 pt-4 text-gray-500 text-sm leading-relaxed border-t border-gray-50">
+          <p class="faq-answer px-6 pb-5 pt-4 text-gray-500 text-sm leading-relaxed border-t border-gray-50">
             {item.a}
           </p>
         </details>

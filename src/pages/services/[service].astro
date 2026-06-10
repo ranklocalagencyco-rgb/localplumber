@@ -6,6 +6,7 @@ import ServiceCard from '../../components/ServiceCard.astro';
 import Icon from '../../components/Icon.astro';
 import { services, getServicesByCategory } from '../../lib/services';
 import type { Service } from '../../lib/services';
+import { buildServicePageSchemas } from '../../lib/schema-builders';
 
 export async function getStaticPaths() {
   return services.map((s) => ({
@@ -25,49 +26,14 @@ const pageDescription = `${service.tagline}. Vetted Gas Safe engineers across Lo
 
 const SITE_PHONE = '0800 000 0000';
 
-const localBusinessSchema = {
-  "@context": "https://schema.org",
-  "@type":    "Service",
-  "name":     service.name,
-  "description": pageDescription,
-  "url":      canonicalUrl,
-  "provider": {
-    "@type": "Organization",
-    "name":  "LocalPlumber.co.uk",
-    "url":   "https://www.localplumber.co.uk",
-  },
-  "areaServed": {
-    "@type": "AdministrativeArea",
-    "name":  "London and the Home Counties",
-  },
-};
-
-const breadcrumbSchema = {
-  "@context": "https://schema.org",
-  "@type":    "BreadcrumbList",
-  "itemListElement": [
-    { "@type": "ListItem", "position": 1, "name": "Home",            "item": "https://www.localplumber.co.uk" },
-    { "@type": "ListItem", "position": 2, "name": "Services",        "item": "https://www.localplumber.co.uk/services" },
-    { "@type": "ListItem", "position": 3, "name": service.name,      "item": canonicalUrl },
-  ],
-};
-
-const faqSchema = {
-  "@context": "https://schema.org",
-  "@type":    "FAQPage",
-  "mainEntity": service.faqs.map((faq) => ({
-    "@type":          "Question",
-    "name":           faq.q,
-    "acceptedAnswer": { "@type": "Answer", "text": faq.a },
-  })),
-};
+const jsonLdSchemas = buildServicePageSchemas(service);
 ---
 
 <BaseLayout
   title={pageTitle}
   description={pageDescription}
   canonicalUrl={canonicalUrl}
-  jsonLdSchemas={[localBusinessSchema, breadcrumbSchema, faqSchema]}
+  jsonLdSchemas={jsonLdSchemas}
 >
 
   <!-- Breadcrumb -->
