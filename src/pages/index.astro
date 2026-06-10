@@ -1,0 +1,287 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ServiceCard from '../components/ServiceCard.astro';
+import { getAllCounties } from '../lib/geo';
+import { getServicesByCategory } from '../lib/services';
+import type { County } from '../types/index';
+
+const counties = await getAllCounties();
+
+const pageTitle       = 'Emergency Plumber Near Me | LocalPlumber.co.uk';
+const pageDescription = 'Find your exclusive local plumber across London and the Home Counties. One vetted Gas Safe specialist per postcode — direct connection, no shared leads, 24/7 emergency response.';
+const canonicalUrl    = 'https://www.localplumber.co.uk';
+
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "LocalPlumber.co.uk",
+  "url": canonicalUrl,
+  "description": pageDescription,
+};
+
+const orgSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "LocalPlumber.co.uk",
+  "url": canonicalUrl,
+  "logo": `${canonicalUrl}/favicon.svg`,
+  "description": "Exclusive local plumber matching platform for London and the Home Counties.",
+  "areaServed": counties.map((c) => ({ "@type": "AdministrativeArea", "name": c.name })),
+};
+
+const SITE_PHONE = '0800 000 0000';
+
+const plumbingServices  = getServicesByCategory('Plumbing');
+const heatingServices   = getServicesByCategory('Heating');
+const drainServices     = getServicesByCategory('Drains');
+const bathroomServices  = getServicesByCategory('Bathrooms');
+
+const trustPoints = [
+  { stat: '1',       label: 'Partner per postcode', sub: 'The Rule of One — no bidding wars'    },
+  { stat: '<60 min', label: 'Emergency response',   sub: 'Target across all covered areas'      },
+  { stat: '100%',    label: 'Gas Safe registered',  sub: 'Every partner independently verified' },
+  { stat: '24 / 7',  label: 'Always available',     sub: 'Weekends and bank holidays included'  },
+];
+---
+
+<BaseLayout
+  title={pageTitle}
+  description={pageDescription}
+  canonicalUrl={canonicalUrl}
+  jsonLdSchemas={[websiteSchema, orgSchema]}
+>
+
+  <!-- ── HERO ──────────────────────────────────────────────────────────────── -->
+  <section style="background: linear-gradient(135deg, #0A192F 0%, #0D2137 50%, #0A192F 100%);">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-24 md:py-32">
+      <div class="max-w-2xl">
+
+        <p class="text-brand-coral text-xs font-semibold uppercase tracking-widest mb-4">
+          Trusted Local Plumbers — London &amp; Home Counties
+        </p>
+
+        <h1 class="font-display font-extrabold text-5xl md:text-6xl text-white leading-tight mb-6">
+          London's Local Plumbing Experts. One Specialist. Your Postcode.
+        </h1>
+
+        <p class="text-blue-200 text-lg max-w-xl mb-10 leading-relaxed">
+          We match homeowners with a single vetted Gas Safe engineer per postcode outcode.
+          No call centres. No bidding. Direct connection — every time.
+        </p>
+
+        <!-- Service selector + postcode form -->
+        <form id="hero-form" class="flex flex-col sm:flex-row gap-3 max-w-2xl" novalidate>
+          <select
+            id="service-select"
+            class="px-4 py-4 text-base border-0 rounded-md bg-white text-brand-navy font-medium
+                   focus:outline-none focus:ring-2 focus:ring-brand-coral w-full sm:w-56 flex-shrink-0"
+          >
+            <option value="">I Need Help With</option>
+            <optgroup label="Plumbing">
+              {plumbingServices.map(s => <option value={s.slug}>{s.name}</option>)}
+            </optgroup>
+            <optgroup label="Heating">
+              {heatingServices.map(s => <option value={s.slug}>{s.name}</option>)}
+            </optgroup>
+            <optgroup label="Drains">
+              {drainServices.map(s => <option value={s.slug}>{s.name}</option>)}
+            </optgroup>
+            <optgroup label="Bathrooms">
+              {bathroomServices.map(s => <option value={s.slug}>{s.name}</option>)}
+            </optgroup>
+          </select>
+
+          <input
+            id="postcode-input"
+            type="text"
+            placeholder="Enter postcode e.g. SW3"
+            autocomplete="postal-code"
+            class="flex-1 px-5 py-4 text-base border-0 rounded-md bg-white text-brand-navy
+                   placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-coral uppercase"
+          />
+
+          <button
+            type="submit"
+            class="bg-brand-coral text-white font-bold text-base px-8 py-4 rounded-md
+                   hover:bg-[#0099BB] transition-colors whitespace-nowrap"
+          >
+            Book Now
+          </button>
+        </form>
+
+        <!-- Trust signals -->
+        <div class="flex flex-wrap gap-6 mt-6">
+          {['✓ Gas Safe Registered', '✓ 60-Min Emergency Response', '✓ No Call Centres', '✓ 24/7 Availability'].map((t) => (
+            <span class="text-blue-200 text-sm flex items-center gap-2">{t}</span>
+          ))}
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── STATS BAR ─────────────────────────────────────────────────────────── -->
+  <section class="bg-white border-b border-gray-100" aria-label="Trust statistics">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12 md:py-16 grid grid-cols-2 lg:grid-cols-4 gap-6">
+      {trustPoints.map((t) => (
+        <div class="text-center">
+          <p class="font-display font-extrabold text-4xl text-brand-hydro">{t.stat}</p>
+          <p class="text-brand-navy font-semibold text-sm mt-1">{t.label}</p>
+          <p class="text-gray-400 text-xs mt-0.5">{t.sub}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- ── SERVICES ────────────────────────────────────────────────────────── -->
+  <section class="bg-white py-16 md:py-20" aria-labelledby="services-heading">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <h2 id="services-heading" class="font-display font-extrabold text-3xl md:text-4xl text-brand-navy mb-2">
+        Every Job. One Call.
+      </h2>
+      <p class="text-gray-400 text-base mb-12">
+        Our partners cover the full residential and commercial plumbing spectrum.
+      </p>
+
+      <!-- Plumbing -->
+      <div class="mb-10">
+        <p class="text-xs font-semibold uppercase tracking-widest text-brand-hydro mb-4">Plumbing</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {plumbingServices.map((s) => <ServiceCard service={s} variant="feature" />)}
+        </div>
+      </div>
+
+      <!-- Heating -->
+      <div class="mb-10">
+        <p class="text-xs font-semibold uppercase tracking-widest text-brand-hydro mb-4">Heating</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {heatingServices.map((s) => <ServiceCard service={s} variant="feature" />)}
+        </div>
+      </div>
+
+      <!-- Bathrooms -->
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-widest text-brand-hydro mb-4">Bathrooms</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {bathroomServices.map((s) => <ServiceCard service={s} variant="feature" />)}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── COUNTY GRID ───────────────────────────────────────────────────────── -->
+  <section id="find-area" class="bg-brand-ice py-16 md:py-20" aria-labelledby="areas-heading">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <h2 id="areas-heading" class="font-display font-extrabold text-3xl md:text-4xl text-brand-navy mb-2">
+        Find a Plumber in Your Area
+      </h2>
+      <p class="text-gray-400 text-base mb-10">
+        Select your county to find the exclusive plumber covering your postcode.
+      </p>
+
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {counties.map((county: County) => (
+          <a
+            href={`/${county.slug}`}
+            class="flex items-center justify-between p-6 bg-white border border-gray-100
+                   rounded-lg shadow-sm hover:border-brand-hydro hover:shadow-md
+                   transition-all duration-200"
+          >
+            <span class="text-brand-navy font-semibold text-lg">{county.name}</span>
+            <span class="text-brand-coral font-bold text-xl" aria-hidden="true">→</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ── RULE OF ONE ───────────────────────────────────────────────────────── -->
+  <section class="bg-brand-ice py-16 md:py-20" aria-labelledby="rule-heading">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="bg-brand-navy rounded-2xl p-8 md:p-12 grid md:grid-cols-2 gap-10 items-center">
+        <div>
+          <p class="text-brand-coral font-display font-bold text-sm uppercase tracking-widest mb-4">
+            The Rule of One
+          </p>
+          <h2 id="rule-heading" class="font-display font-extrabold text-4xl text-white leading-tight mb-5">
+            Why we only allow one plumber per postcode
+          </h2>
+          <p class="text-blue-200 leading-relaxed mb-6">
+            Every other lead platform sells the same enquiry to 4–6 firms, triggering a race to
+            the bottom on price and a flood of cold calls to the homeowner. That model serves
+            nobody well.
+          </p>
+          <p class="text-blue-200 leading-relaxed">
+            We enforce exclusivity at the database level — a single
+            <code class="bg-white/10 px-1.5 py-0.5 rounded text-brand-coral text-sm">UNIQUE</code>
+            constraint per postcode outcode. One firm wins the territory. They invest in it. You get a
+            committed local specialist, not the cheapest bidder.
+          </p>
+        </div>
+        <div class="space-y-4">
+          {[
+            { label: 'Shared platforms (Bark, Checkatrade)', bad: true,  value: '4–6 firms compete per lead — homeowner gets called by everyone' },
+            { label: 'LocalPlumber.co.uk',                   bad: false, value: '1 exclusive firm per postcode — direct call, no bidding, no spam' },
+          ].map((row) => (
+            <div class={`rounded-xl p-5 border ${row.bad ? 'border-red-500/30 bg-red-500/10' : 'border-green-400/30 bg-green-400/10'}`}>
+              <p class={`font-display font-bold text-sm mb-1 ${row.bad ? 'text-red-300' : 'text-green-300'}`}>
+                {row.bad ? '✗' : '✓'} {row.label}
+              </p>
+              <p class="text-white/70 text-sm">{row.value}</p>
+            </div>
+          ))}
+          <a
+            href={`tel:${SITE_PHONE.replace(/\s/g, '')}`}
+            class="flex items-center justify-center gap-3 w-full bg-brand-coral text-white
+                   font-display font-bold text-lg py-4 rounded-cta shadow-call
+                   hover:bg-[#0099BB] active:scale-[0.98] transition-all mt-2"
+          >
+            Call Now — {SITE_PHONE}
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── PARTNER CTA ───────────────────────────────────────────────────────── -->
+  <section class="bg-white py-16 md:py-20 mb-24 md:mb-0 border-t border-gray-100" aria-labelledby="partner-heading">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 text-center">
+      <h2 id="partner-heading" class="font-display font-extrabold text-3xl text-brand-navy mb-3">
+        Are you a local plumber?
+      </h2>
+      <p class="text-gray-500 mb-6 max-w-xl mx-auto">
+        Claim exclusive territory for your postcode outcode. No bidding, no competition —
+        every lead from your area comes directly to you.
+      </p>
+      <a
+        href="/partners"
+        class="inline-flex items-center gap-2 bg-brand-coral text-white
+               font-display font-bold text-base px-8 py-4 rounded-cta shadow-call
+               hover:bg-[#0099BB] active:scale-[0.98] transition-all"
+      >
+        Become a Partner →
+      </a>
+    </div>
+  </section>
+
+</BaseLayout>
+
+<script>
+  const form = document.getElementById('hero-form');
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input   = document.getElementById('postcode-input') as HTMLInputElement;
+    const service = document.getElementById('service-select') as HTMLSelectElement;
+    const value   = input.value.trim().toUpperCase();
+    if (!value) return;
+    const outcode = value.split(' ')[0];
+    if (outcode.length >= 2) {
+      if (service?.value) {
+        sessionStorage.setItem('requested-service-slug', service.value);
+      }
+      window.location.href = `/postcode/${outcode.toLowerCase()}`;
+    }
+  });
+</script>

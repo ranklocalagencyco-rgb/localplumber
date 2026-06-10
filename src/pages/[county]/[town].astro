@@ -1,0 +1,515 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Icon from '../../components/Icon.astro';
+import { supabase } from '../../lib/supabase';
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface TownRow {
+  id:         number;
+  county_id:  number;
+  name:       string;
+  slug:       string;
+  latitude:   number | null;
+  longitude:  number | null;
+}
+
+interface CountyRow {
+  id:   number;
+  name: string;
+  slug: string;
+}
+
+// ── Area context ──────────────────────────────────────────────────────────────
+
+const areaContext = {
+  'chelsea': {
+    description:   'Chelsea runs from the Kings Road down to the Embankment. Georgian terraces, mansion blocks, and a surprising number of basement conversions that create drainage headaches. Property prices mean plumbing jobs here tend to involve high-spec bathrooms and boiler rooms that have not been touched since the 1990s.',
+    plumbingNote:  'Basement flats and extensions are common in Chelsea, and they often have pumped drainage systems that need specialist attention.',
+    responseNote:  'Central location means most jobs can be reached within 45 minutes during normal hours.',
+  },
+  'hampstead': {
+    description:   'Hampstead sits on a hill, which sounds irrelevant until your water pressure gives out three floors up in one of the area\'s many converted Victorian houses. The Heath end of the village has some of the oldest housing stock in North London.',
+    plumbingNote:  'Victorian housing stock is dense here. Lead pipe replacement and old cast iron drains are common jobs.',
+    responseNote:  'NW3 can be slow to reach in peak traffic. Honest estimate is 60-90 minutes at busy times.',
+  },
+  'camden-town': {
+    description:   'Camden Town is denser than it looks on a map. Behind the market and the main drag are streets of Victorian terraces packed with HMOs and split conversions, most of which share drainage systems that were never designed for that many occupants.',
+    plumbingNote:  'Shared drainage and old cast iron stacks are the most common callout in Camden. Blockages often affect multiple flats at once.',
+    responseNote:  'Camden is well-placed for central London response. Most jobs within 45 minutes.',
+  },
+  'islington': {
+    description:   'Islington has some of London\'s most perfectly preserved Georgian terraces, which is lovely until the original lead pipework finally gives up. Upper Street gets most of the attention but the residential streets behind it are where most of the plumbing work happens.',
+    plumbingNote:  'Georgian properties here often still have original lead supply pipes. Replacement is increasingly common as owners renovate.',
+    responseNote:  'N1 is central and easy to reach from most of North London.',
+  },
+  'hackney': {
+    description:   'Hackney has changed fast. Victorian terraces in Clapton and Homerton now sit next to new-build blocks in Stratford\'s orbit, and the plumbing challenges are completely different between them. The older stock has issues. The new builds have warranty complications.',
+    plumbingNote:  'Hard water is a real problem in East London. Limescale buildup in boilers and hot water cylinders causes more callouts here than most people expect.',
+    responseNote:  'E5 and E8 are straightforward to reach from East and Central London.',
+  },
+  'brixton': {
+    description:   'Brixton is mostly Victorian and Edwardian stock, with a lot of converted houses running multiple flats off shared systems. The area around Acre Lane and Brixton Hill has some of the largest Victorian terraces in South London.',
+    plumbingNote:  'Converted Victorian terraces with multiple flats often have drainage systems at capacity. Blockages and back-ups are the most frequent callout.',
+    responseNote:  'SW2 and SW9 are accessible from most of South London within 45-60 minutes.',
+  },
+  'clapham': {
+    description:   'Clapham has a mix. The big Victorian terraces off the Common, the 1930s semis towards Balham, and newer flats around Clapham Junction. Boiler problems spike every October when the heating goes on for the first time and discovers it has not been serviced.',
+    plumbingNote:  'Boiler servicing demand in Clapham is high. A lot of landlord properties have annual Gas Safe certificate requirements.',
+    responseNote:  'SW4 and SW11 are well-connected. Most of Clapham can be reached within 45 minutes.',
+  },
+  'wandsworth': {
+    description:   'Wandsworth has gentrified steadily along the river and up towards Earlsfield. The riverside new-builds have their own management companies and maintenance contracts. The residential streets behind Wandsworth Town are still mostly Victorian stock with original drains.',
+    plumbingNote:  'The mix of old Victorian terraces and new riverside apartments means two completely different sets of plumbing problems in the same postcode.',
+    responseNote:  'SW18 is easy to reach from South West London.',
+  },
+  'battersea': {
+    description:   'Battersea has changed more than almost anywhere in London over the past decade. The Power Station development brought thousands of new flats with entirely new infrastructure, sitting next to Victorian streets that have not been touched since the 1980s.',
+    plumbingNote:  'New-build flats around Battersea Power Station often have communal plant rooms. Individual flat issues can be complicated by building management involvement.',
+    responseNote:  'SW11 is central South London. Accessible within 45 minutes from most areas.',
+  },
+  'southwark': {
+    description:   'Southwark covers more ground than most people realise. From London Bridge down to Peckham and across to Bermondsey, the housing stock ranges from converted warehouse lofts to council estates to 1990s new-builds, and each brings its own set of problems.',
+    plumbingNote:  'Bermondsey and the riverside areas have a lot of converted commercial buildings with non-standard drainage. Specialist knowledge helps.',
+    responseNote:  'SE1 is central and straightforward to reach.',
+  },
+  'greenwich': {
+    description:   'Greenwich proper, around the Market and the Park, has some beautiful but genuinely old housing stock. The Georgian and Victorian terraces on Crooms Hill are the kind of properties where every renovation uncovers something unexpected inside the walls.',
+    plumbingNote:  'Old housing stock near the Park frequently has original Victorian drainage. Root ingress and collapsed sections are common in the older streets.',
+    responseNote:  'SE10 can be slow to reach from West London. From South and East London, 30-45 minutes is realistic.',
+  },
+  'canary-wharf': {
+    description:   'Canary Wharf is almost entirely residential towers built in phases from the 1990s onwards. Each building has its own management company, its own plant room, and its own rules about contractor access. Individual flat plumbing is usually straightforward. Getting into the building sometimes is not.',
+    plumbingNote:  'High-rise residential blocks here all have pressurised hot water systems and mechanical ventilation. Different skillset from Victorian terraces.',
+    responseNote:  'E14 is accessible from East and Central London. Building access procedures can add time to appointments.',
+  },
+  'whitechapel': {
+    description:   'Whitechapel is one of the most densely populated parts of London. The housing ranges from genuinely old Victorian terraces on the backstreets to large council estates to new private developments around the hospital. All three types of building, within a few minutes walk of each other.',
+    plumbingNote:  'Dense population and shared drainage infrastructure means blockages here often affect multiple properties. Identifying the responsible section takes experience.',
+    responseNote:  'E1 is central East London. Easy to reach, often within 30 minutes.',
+  },
+  'stratford': {
+    description:   'Stratford was remade for 2012 and has not stopped changing since. Most of the residential stock here is post-2008 new-build, with the older Victorian streets in Forest Gate and West Ham just to the east. Two completely different plumbing realities in adjacent postcodes.',
+    plumbingNote:  'Olympic legacy new-builds have pressurised systems and underfloor heating that need specialist servicing. Not a standard boiler job.',
+    responseNote:  'E15 and E20 are well-connected by road and easy to reach from most of East London.',
+  },
+  'notting-hill': {
+    description:   'Notting Hill is mostly large Victorian townhouses, a lot of which have been converted into flats over the decades. The basements are particularly common, and basement conversions in properties with original drainage often create complicated situations.',
+    plumbingNote:  'Basement flats and garden-level conversions are everywhere in W11. Pumped drainage and sump systems are common.',
+    responseNote:  'W11 is West London. Accessible from Central and West London within 30-45 minutes.',
+  },
+  'shepherds-bush': {
+    description:   'Shepherds Bush has a mix of Victorian terraces, 1930s council housing, and the newer Westfield-adjacent developments. The W12 postcode stretches from the Green down to White City and each part has different stock.',
+    plumbingNote:  'The mix of property ages in W12 means anything from original Victorian waste pipes to modern combi installations on the same street.',
+    responseNote:  'W12 is well-placed for West London response.',
+  },
+  'fulham': {
+    description:   'Fulham has some of the most expensive Victorian terraces in London, which means the plumbing inside them is often a mismatch of original pipework and expensive modern bathrooms bolted on by successive owners. The contrast between what a bathroom looks like and what is behind the tiles can be significant.',
+    plumbingNote:  'High-value bathroom renovations on top of original Victorian supply pipes is a common combination in Fulham. Problems hide behind expensive finishes.',
+    responseNote:  'SW6 is accessible from West and South West London.',
+  },
+  'kensington': {
+    description:   'Kensington has some of the largest private houses in London, and with large houses comes large plumbing systems. Multiple bathrooms, guest WCs, kitchen and utility rooms, often served by ageing infrastructure. The basement conversions here are also on a different scale to most of London.',
+    plumbingNote:  'Large multi-bathroom properties with ageing infrastructure are the norm in W8. Jobs here often take longer than initial estimates suggest.',
+    responseNote:  'W8 is Central West London. Accessible within 30-45 minutes.',
+  },
+  'borough': {
+    description:   'Borough and Bermondsey have transformed over the past 20 years. The warehouse conversions around Borough Market brought a wave of loft apartments with unconventional layouts and bespoke plumbing that does not follow standard patterns. The council estates nearby are still running on 1960s infrastructure.',
+    plumbingNote:  'Converted warehouses have non-standard drainage configurations. What looks straightforward on a plan often is not in practice.',
+    responseNote:  'SE1 is one of the easiest London postcodes to reach. Central and well-connected.',
+  },
+  'mayfair': {
+    description:   'Mayfair is almost entirely commercial at street level, with residential above. Mansion blocks, serviced apartments, and some of London\'s oldest and most valuable private houses. The plumbing in the older properties here is a mix of genuinely antique pipework and high-spec modern installations put in by wealthy owners.',
+    plumbingNote:  'Older mansion blocks in Mayfair frequently have communal hot water systems serving multiple flats. Individual flat issues can trace back to building-wide infrastructure.',
+    responseNote:  'W1 is central London. The easiest place to reach quickly from almost anywhere.',
+  },
+};
+
+// ── Static paths ──────────────────────────────────────────────────────────────
+
+export async function getStaticPaths() {
+  const [townsRes, outcodesRes, territoriesRes] = await Promise.all([
+    supabase
+      .from('towns')
+      .select('id, county_id, name, slug, latitude, longitude, counties(id, name, slug)')
+      .order('name'),
+    supabase
+      .from('outcodes')
+      .select('outcode, town_id'),
+    supabase
+      .from('exclusive_territories')
+      .select('outcode, plumber_id, plumbers(phone_routing_number, account_status)'),
+  ]);
+
+  const towns = (townsRes.data ?? []) as unknown as Array<TownRow & { counties: CountyRow }>;
+  const outcodes = (outcodesRes.data ?? []) as Array<{ outcode: string; town_id: number }>;
+  const territories = (territoriesRes.data ?? []) as unknown as Array<{
+    outcode:    string;
+    plumber_id: string;
+    plumbers:   { phone_routing_number: string; account_status: string } | null;
+  }>;
+
+  const territoryMap = new Map(territories.map(t => [t.outcode, t.plumbers]));
+
+  const townOutcodes = new Map<number, string[]>();
+  for (const oc of outcodes) {
+    const list = townOutcodes.get(oc.town_id) ?? [];
+    list.push(oc.outcode);
+    townOutcodes.set(oc.town_id, list);
+  }
+
+  return towns.map(town => {
+    const county = town.counties;
+    const codes  = townOutcodes.get(town.id) ?? [];
+
+    let isAssigned   = false;
+    let partnerPhone: string | null = null;
+
+    for (const code of codes) {
+      const plumber = territoryMap.get(code);
+      if (plumber?.account_status === 'active') {
+        isAssigned   = true;
+        partnerPhone = plumber.phone_routing_number;
+        break;
+      }
+    }
+
+    return {
+      params: { county: county.slug, town: town.slug },
+      props:  { town, county, isAssigned, partnerPhone },
+    };
+  });
+}
+
+// ── Props ─────────────────────────────────────────────────────────────────────
+
+interface Props {
+  town:         TownRow;
+  county:       CountyRow;
+  isAssigned:   boolean;
+  partnerPhone: string | null;
+}
+
+const { town, county, isAssigned, partnerPhone } = Astro.props as Props;
+
+const context      = areaContext[town.slug as keyof typeof areaContext] ?? null;
+const displayPhone = (isAssigned && partnerPhone) ? partnerPhone : '0800 000 0000';
+const canonicalUrl = `https://www.localplumber.co.uk/${county.slug}/${town.slug}`;
+const pageTitle    = `Plumber in ${town.name} | Local Gas Safe Engineer | LocalPlumber.co.uk`;
+const pageDescription = `Gas Safe plumber in ${town.name}. One vetted local engineer per postcode outcode, available 24 hours. Direct contact, no shared leads.`;
+
+// ── JSON-LD ───────────────────────────────────────────────────────────────────
+
+const localBusinessSchema = {
+  '@context': 'https://schema.org',
+  '@type':    'Plumber',
+  'name':     `Local Plumber ${town.name}`,
+  'description': context?.description ?? `Vetted local plumber covering ${town.name}.`,
+  'url':      canonicalUrl,
+  'telephone': isAssigned ? partnerPhone : '+448000000000',
+  'areaServed': {
+    '@type': 'City',
+    'name':  town.name,
+    'containedIn': { '@type': 'AdministrativeArea', 'name': county.name },
+  },
+  ...(town.latitude ? {
+    'geo': {
+      '@type':     'GeoCoordinates',
+      'latitude':  town.latitude,
+      'longitude': town.longitude,
+    },
+  } : {}),
+  'openingHoursSpecification': {
+    '@type':      'OpeningHoursSpecification',
+    'dayOfWeek':  ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+    'opens':      '00:00',
+    'closes':     '23:59',
+  },
+  'priceRange':        '££',
+  'paymentAccepted':   'Cash, Credit Card, Bank Transfer',
+  'currenciesAccepted':'GBP',
+};
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type':    'BreadcrumbList',
+  'itemListElement': [
+    { '@type': 'ListItem', 'position': 1, 'name': 'Home',       'item': 'https://www.localplumber.co.uk' },
+    { '@type': 'ListItem', 'position': 2, 'name': county.name,  'item': `https://www.localplumber.co.uk/${county.slug}` },
+    { '@type': 'ListItem', 'position': 3, 'name': town.name,    'item': canonicalUrl },
+  ],
+};
+
+const faqItems = [
+  {
+    q: `How quickly can I get a plumber in ${town.name}?`,
+    a: context?.responseNote ?? `Our ${town.name} partner targets a 60-minute response for emergencies like burst pipes, leaks, and drain blockages. Response times vary by time of day and exact location within ${town.name}.`,
+  },
+  {
+    q: `Are your plumbers in ${town.name} Gas Safe registered?`,
+    a: `Yes. Every partner covering ${town.name} is Gas Safe registered and independently vetted before being listed. You can check any engineer's Gas Safe number at the official Gas Safe Register website.`,
+  },
+  {
+    q: `What plumbing services are available in ${town.name}?`,
+    a: `The ${town.name} partner covers emergency plumbing, boiler repair and installation, blocked drains, bathroom fitting, central heating, and landlord gas safety certificates. All residential and most commercial jobs are covered.`,
+  },
+  {
+    q: `Do you charge a call-out fee in ${town.name}?`,
+    a: `Call-out charges depend on the job type and time of day. Your local ${town.name} engineer will confirm any call-out charge before attending. Emergency out-of-hours rates apply outside standard working hours.`,
+  },
+  {
+    q: `Can I get a same-day plumber in ${town.name}?`,
+    a: `For genuine emergencies — burst pipes, leaks, no heating — same-day attendance is the target. For non-urgent jobs like bathroom installations or boiler upgrades, your ${town.name} partner will schedule at a time that suits you.`,
+  },
+  {
+    q: `Is there one plumber exclusively covering ${town.name}?`,
+    a: `Yes. We operate a Rule of One — exactly one vetted firm holds the exclusive territory for each postcode area. When you call or submit a form from ${town.name}, your details go directly to that partner. No shared leads, no competing callbacks.`,
+  },
+  {
+    q: `Do your ${town.name} plumbers work weekends and bank holidays?`,
+    a: `Yes. The ${town.name} partner operates 24 hours a day, 7 days a week including bank holidays. Out-of-hours rates apply for evenings and weekends.`,
+  },
+  {
+    q: `What should I do while waiting for a plumber in ${town.name}?`,
+    a: `If water is leaking, turn off your stop tap first — it's usually under the kitchen sink or where the mains enters the property. For a gas smell, leave the building, don't use switches or flames, and call the National Gas Emergency line on 0800 111 999 before calling a plumber.`,
+  },
+];
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type':    'FAQPage',
+  'mainEntity': faqItems.map(item => ({
+    '@type': 'Question',
+    'name':  item.q,
+    'acceptedAnswer': { '@type': 'Answer', 'text': item.a },
+  })),
+};
+
+// ── Service cards ─────────────────────────────────────────────────────────────
+
+const serviceCards = [
+  { icon: 'bolt',             name: 'Emergency Plumbing',  desc: '24-hour response for leaks and bursts.',     href: '/services/24-hour-emergency-plumber'    },
+  { icon: 'exclamation-circle', name: 'Boiler Repair',     desc: 'Same-day diagnosis and repair.',             href: '/services/emergency-boiler-repair'       },
+  { icon: 'funnel',           name: 'Blocked Drains',      desc: 'Jetting and rodding for all drain types.',   href: '/services/blocked-drains'               },
+  { icon: 'squares',          name: 'Bathroom Fitting',    desc: 'Full installation and suite replacement.',   href: '/services/bathroom-fitting-installation' },
+  { icon: 'fire',             name: 'Central Heating',     desc: 'Radiators, pumps, valves and controls.',     href: '/services/central-heating-service'       },
+  { icon: 'circle',           name: 'Gas Safety',          desc: 'CP12 certificates for landlords.',           href: '/services/boiler-repair-service'         },
+];
+---
+
+<BaseLayout
+  title={pageTitle}
+  description={pageDescription}
+  canonicalUrl={canonicalUrl}
+  jsonLdSchemas={[localBusinessSchema, breadcrumbSchema, faqSchema]}
+  locationName={town.name}
+>
+
+  <!-- ── Section 1: Hero ──────────────────────────────────────────────────── -->
+  <section class="bg-white pt-20 pb-16">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+
+      <!-- Breadcrumb -->
+      <nav class="mb-8" aria-label="Breadcrumb">
+        <ol class="flex items-center gap-1.5 text-xs text-brand-hydro">
+          <li><a href="/" class="hover:underline">Home</a></li>
+          <li aria-hidden="true" class="text-gray-300">›</li>
+          <li><a href={`/${county.slug}`} class="hover:underline">{county.name}</a></li>
+          <li aria-hidden="true" class="text-gray-300">›</li>
+          <li class="text-brand-navy font-medium" aria-current="page">{town.name}</li>
+        </ol>
+      </nav>
+
+      <!-- Area context eyebrow (unique local knowledge) -->
+      {context?.description && (
+        <p class="text-gray-500 text-sm max-w-xl mb-4 leading-relaxed">{context.description}</p>
+      )}
+
+      <!-- H1 -->
+      <h1 class="font-display font-extrabold text-5xl md:text-6xl text-brand-navy leading-tight mb-4">
+        Plumber in {town.name}
+      </h1>
+
+      <!-- Plumbing note or generic subtext -->
+      {context?.plumbingNote ? (
+        <p class="text-gray-600 text-lg max-w-xl mb-8 leading-relaxed">{context.plumbingNote}</p>
+      ) : (
+        <p class="text-gray-600 text-lg max-w-xl mb-8">
+          Gas Safe vetted plumber covering {town.name}. Direct call, no switchboard.
+        </p>
+      )}
+
+      <!-- CTA -->
+      {isAssigned ? (
+        <div class="flex flex-col sm:flex-row items-start gap-4 flex-wrap">
+          <a
+            href={`tel:${displayPhone.replace(/\s/g, '')}`}
+            class="inline-flex items-center gap-3 bg-brand-coral text-white
+                   font-display font-bold text-xl px-8 py-5 rounded-cta shadow-call
+                   hover:bg-[#0099BB] active:scale-[0.98] transition-all"
+          >
+            <svg width="22" height="22" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M3.5 2C3.5 2 2 2.5 2 4.5c0 5 5.5 9.5 10 9.5 2 0 2.5-1.5 2.5-1.5l-2-2-1.5.5S9.5 9.5 8 8C6.5 6.5 6 5 6 5l.5-1.5L5 2z" fill="currentColor"/>
+            </svg>
+            Call Now — {displayPhone}
+          </a>
+          {context?.responseNote && (
+            <span class="inline-flex items-center gap-2 text-sm text-gray-500 border border-gray-200 rounded-full px-4 py-2.5 self-center">
+              <span class="w-2 h-2 rounded-full bg-green-400 flex-shrink-0 animate-pulse" aria-hidden="true"></span>
+              {context.responseNote}
+            </span>
+          )}
+        </div>
+      ) : (
+        <div class="max-w-md">
+          <p class="text-gray-600 text-sm mb-4">
+            Leave your details and we'll confirm whether a local engineer covers {town.name}.
+          </p>
+          <form method="POST" action="/api/lead-route" class="space-y-3" novalidate>
+            <input type="hidden" name="town_slug"   value={town.slug} />
+            <input type="hidden" name="county_slug" value={county.slug} />
+            <input
+              type="text" name="name" placeholder="Your name" required autocomplete="name"
+              class="w-full px-4 py-3 bg-brand-ice border border-gray-200 rounded-md
+                     text-brand-navy placeholder:text-gray-400 text-sm
+                     focus:outline-none focus:ring-2 focus:ring-brand-coral focus:border-transparent"
+            />
+            <input
+              type="tel" name="phone" placeholder="Phone number" required autocomplete="tel"
+              class="w-full px-4 py-3 bg-brand-ice border border-gray-200 rounded-md
+                     text-brand-navy placeholder:text-gray-400 text-sm
+                     focus:outline-none focus:ring-2 focus:ring-brand-coral focus:border-transparent"
+            />
+            <input
+              type="text" name="postcode" placeholder="Postcode" required autocomplete="postal-code"
+              class="w-full px-4 py-3 bg-brand-ice border border-gray-200 rounded-md
+                     text-brand-navy placeholder:text-gray-400 text-sm uppercase
+                     focus:outline-none focus:ring-2 focus:ring-brand-coral focus:border-transparent"
+            />
+            <button
+              type="submit"
+              class="w-full bg-brand-coral text-white font-display font-bold text-base
+                     py-4 rounded-cta shadow-call hover:bg-[#0099BB] active:scale-[0.98] transition-all"
+            >
+              Request a Callback
+            </button>
+          </form>
+        </div>
+      )}
+
+    </div>
+  </section>
+
+  <!-- ── Section 2: Services strip ────────────────────────────────────────── -->
+  <section class="bg-white py-10 border-t border-gray-100">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {serviceCards.map(card => (
+          <a
+            href={card.href}
+            class="p-4 bg-white border border-gray-100 rounded-xl text-center
+                   hover:border-brand-coral transition-colors group"
+          >
+            <div class="flex justify-center mb-2">
+              <span class="w-9 h-9 rounded-lg bg-brand-ice flex items-center justify-center
+                           group-hover:bg-brand-coral/10 transition-colors">
+                <Icon name={card.icon} class="w-4 h-4 text-brand-hydro group-hover:text-brand-coral transition-colors" />
+              </span>
+            </div>
+            <p class="text-brand-navy font-semibold text-xs mb-1 group-hover:text-brand-coral transition-colors leading-snug">
+              {card.name}
+            </p>
+            <p class="text-gray-400 text-xs leading-snug">{card.desc}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Section 3: At a Glance ────────────────────────────────────────────── -->
+  <section class="bg-brand-ice py-12" aria-labelledby="glance-heading">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <h2 id="glance-heading" class="font-display font-bold text-2xl text-brand-navy mb-6">
+        {town.name} — At a Glance
+      </h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse" role="table">
+          <caption class="sr-only">Local plumbing service information for {town.name}</caption>
+          <tbody>
+            {[
+              { label: 'Coverage Area',    value: `${town.name} and the surrounding postcode outcode` },
+              { label: 'Response Target',  value: context?.responseNote ?? '60 minutes for emergency callouts' },
+              { label: 'Vetting Standard', value: 'Gas Safe registered, independently verified' },
+              { label: 'Call Routing',     value: 'Direct to your local engineer' },
+              { label: 'Operating Hours',  value: '24 hours, 7 days including bank holidays' },
+            ].map((row, i) => (
+              <tr class={i % 2 === 0 ? 'bg-white' : 'bg-brand-ice'}>
+                <td class="py-3 px-4 font-medium text-brand-navy border-b border-gray-100 w-1/3 text-sm">
+                  {row.label}
+                </td>
+                <td class="py-3 px-4 text-gray-700 border-b border-gray-100 text-sm">
+                  {row.value}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Section 4: FAQ ────────────────────────────────────────────────────── -->
+  <section class="py-14 max-w-3xl mx-auto px-4 sm:px-6 mb-24 md:mb-0">
+    <h2 class="text-2xl font-extrabold text-brand-navy mb-8">
+      Questions about plumbers in {town.name}
+    </h2>
+
+    <div class="space-y-2">
+      {faqItems.map((item) => (
+        <details class="bg-white border border-gray-100 rounded-xl group">
+          <summary class="flex items-center justify-between px-6 py-5 cursor-pointer list-none">
+            <span class="font-display font-semibold text-brand-navy text-base pr-4 leading-snug">{item.q}</span>
+            <svg
+              width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"
+              class="shrink-0 text-brand-hydro transition-transform group-open:rotate-180"
+            >
+              <path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </summary>
+          <p class="px-6 pb-5 pt-4 text-gray-500 text-sm leading-relaxed border-t border-gray-50">
+            {item.a}
+          </p>
+        </details>
+      ))}
+    </div>
+  </section>
+
+  <!-- ── Section 5: Bottom CTA ─────────────────────────────────────────────── -->
+  <section class="bg-brand-navy py-16 mb-24 md:mb-0 text-center">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6">
+      <h2 class="font-display font-bold text-3xl text-white mb-4">
+        Need a plumber in {town.name}?
+      </h2>
+      <p class="text-blue-200 text-sm mb-8 max-w-sm mx-auto">
+        {isAssigned
+          ? `Call directly. No switchboard, no hold music. Straight through to the ${town.name} engineer.`
+          : `Leave your details and we will confirm whether we cover ${town.name}.`
+        }
+      </p>
+      <a
+        href={`tel:${displayPhone.replace(/\s/g, '')}`}
+        class="inline-flex items-center gap-3 bg-brand-coral text-white
+               font-display font-bold text-xl px-10 py-5 rounded-cta shadow-call
+               hover:bg-[#0099BB] active:scale-[0.98] transition-all"
+      >
+        <svg width="22" height="22" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M3.5 2C3.5 2 2 2.5 2 4.5c0 5 5.5 9.5 10 9.5 2 0 2.5-1.5 2.5-1.5l-2-2-1.5.5S9.5 9.5 8 8C6.5 6.5 6 5 6 5l.5-1.5L5 2z" fill="currentColor"/>
+        </svg>
+        Call {displayPhone}
+      </a>
+    </div>
+  </section>
+
+</BaseLayout>

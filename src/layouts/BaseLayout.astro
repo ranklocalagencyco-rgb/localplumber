@@ -1,0 +1,309 @@
+---
+import '../styles/global.css';
+
+export interface Props {
+  title: string;
+  description: string;
+  canonicalUrl: string;
+  ogImage?: string;
+  jsonLdSchemas?: object[];
+  noIndex?: boolean;
+  locationName?: string;
+}
+
+const {
+  title,
+  description,
+  canonicalUrl,
+  ogImage = 'https://www.localplumber.co.uk/og-default.jpg',
+  jsonLdSchemas = [],
+  noIndex = false,
+  locationName,
+} = Astro.props;
+
+const SITE_PHONE_FALLBACK = '0800 000 0000';
+
+const navItems = [
+  {
+    label: 'Plumbing',
+    href: null,
+    dropdown: [
+      { label: '24 Hour Emergency Plumber',  href: '/services/24-hour-emergency-plumber' },
+      { label: 'Plumbing Installation',      href: '/services/plumbing-installation'     },
+      { label: 'Plumbing Repairs',           href: '/services/plumbing-repairs'          },
+      { label: 'Kitchen Plumbing Repairs',   href: '/services/kitchen-plumbing-repairs'  },
+      { label: 'Drain Blockages',            href: '/services/drain-blockages'           },
+      { label: 'Toilet Plumbing Services',   href: '/services/toilet-plumbing-services'  },
+      { label: 'Leaking Tap Repair',         href: '/services/leaking-tap-repair'        },
+    ],
+  },
+  {
+    label: 'Heating',
+    href: null,
+    dropdown: [
+      { label: 'Emergency Heating Engineers',   href: '/services/emergency-heating-engineers' },
+      { label: 'Emergency Boiler Repair',       href: '/services/emergency-boiler-repair'     },
+      { label: 'Boiler Repair and Service',     href: '/services/boiler-repair-service'       },
+      { label: 'Boiler Installation',           href: '/services/boiler-installation'         },
+      { label: 'Central Heating Service',       href: '/services/central-heating-service'     },
+      { label: 'Central Heating Repairs',       href: '/services/central-heating-repairs'     },
+      { label: 'Power Flush',                   href: '/services/power-flush'                 },
+    ],
+  },
+  {
+    label: 'Drains',
+    href: null,
+    dropdown: [
+      { label: 'Emergency Drain Services',  href: '/services/emergency-drain-services' },
+      { label: 'Drain Repair Services',     href: '/services/drain-repair-services'    },
+      { label: 'Blocked Toilets',           href: '/services/blocked-toilets'          },
+      { label: 'Blocked Drains',            href: '/services/blocked-drains'           },
+      { label: 'Blocked Sink Services',     href: '/services/blocked-sink-services'    },
+      { label: 'Drain Cleaning',            href: '/services/drain-cleaning'           },
+      { label: 'Blocked Shower Services',   href: '/services/blocked-shower-services'  },
+    ],
+  },
+  {
+    label: 'Bathrooms',
+    href: null,
+    dropdown: [
+      { label: 'Bathroom Fitting & Installation', href: '/services/bathroom-fitting-installation' },
+      { label: 'Bathroom Repairs',                href: '/services/bathroom-repairs'              },
+    ],
+  },
+  {
+    label: 'Locations',
+    href: null,
+    dropdown: [
+      { label: 'London',           href: '/london'           },
+      { label: 'Surrey',           href: '/surrey'           },
+      { label: 'Essex',            href: '/essex'            },
+      { label: 'Kent',             href: '/kent'             },
+      { label: 'Hertfordshire',    href: '/hertfordshire'    },
+      { label: 'Berkshire',        href: '/berkshire'        },
+      { label: 'Buckinghamshire',  href: '/buckinghamshire'  },
+    ],
+  },
+];
+---
+
+<!doctype html>
+<html lang="en-GB" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={canonicalUrl} />
+  {noIndex && <meta name="robots" content="noindex, nofollow" />}
+
+  <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large" />
+  <meta name="bingbot"   content="index, follow" />
+
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content={canonicalUrl} />
+  <meta property="og:title"       content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image"       content={ogImage} />
+  <meta property="og:locale"      content="en_GB" />
+  <meta property="og:site_name"   content="LocalPlumber.co.uk" />
+
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image"       content={ogImage} />
+
+  {jsonLdSchemas.map((schema) => (
+    <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+  ))}
+
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "LocalPlumber.co.uk",
+    "url": "https://www.localplumber.co.uk",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://www.localplumber.co.uk/postcode/{search_term_string}"
+      },
+      "query-input": "required name=search_term_string"
+    }
+  })} />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+</head>
+
+<body class="bg-brand-canvas text-brand-navy font-body antialiased">
+
+  <!-- ── Header ─────────────────────────────────────────────────────────── -->
+  <div class="sticky top-0 z-50">
+
+    <!-- Top bar -->
+    <div class="bg-brand-navy py-2.5">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between">
+        <span class="text-white text-xs font-medium">24 Hours · 7 Days · Bank Holidays Included</span>
+        <a
+          href={`tel:${SITE_PHONE_FALLBACK.replace(/\s/g, '')}`}
+          class="text-brand-coral font-extrabold text-lg tracking-wide hover:text-white transition-colors"
+        >
+          {SITE_PHONE_FALLBACK}
+        </a>
+      </div>
+    </div>
+
+    <!-- Bottom bar -->
+    <header class="bg-brand-navy border-b border-white/10">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-6">
+
+        <!-- Logo -->
+        <a href="/" class="flex items-center gap-2 shrink-0" aria-label="LocalPlumber.co.uk — Home">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+            <circle cx="14" cy="14" r="13" fill="#0A192F" stroke="#00B4D8" stroke-width="1.5"/>
+            <path d="M9 10h10M9 14h10M9 18h6" stroke="#00B4D8" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="19" cy="18" r="2.5" fill="#00B4D8"/>
+          </svg>
+          <span class="font-display font-bold text-lg tracking-tight">
+            <span class="text-white">Local</span><span class="text-brand-coral">Plumber</span><span class="text-brand-coral text-sm font-normal">.co.uk</span>
+          </span>
+        </a>
+
+        <!-- Centre nav — desktop only -->
+        <nav class="hidden lg:flex items-center gap-8 text-sm font-medium" aria-label="Main navigation">
+          {navItems.map((item) => (
+            item.dropdown ? (
+              <div class="relative group">
+                <button
+                  type="button"
+                  class="flex items-center gap-1 text-white hover:text-brand-coral transition-colors py-4"
+                >
+                  {item.label}
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true" class="mt-px">
+                    <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+                <div class="absolute hidden group-hover:block bg-white shadow-lg rounded-md py-2 min-w-48 z-50 top-full left-0">
+                  {item.dropdown.map((link) => (
+                    <a
+                      href={link.href}
+                      class="block px-4 py-2 text-sm text-brand-navy hover:bg-brand-ice hover:text-brand-hydro transition-colors"
+                    >
+                      {link.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <a
+                href={item.href!}
+                class="text-white hover:text-brand-coral transition-colors py-4"
+              >
+                {item.label}
+              </a>
+            )
+          ))}
+        </nav>
+
+        <!-- Right CTA -->
+        <a
+          href={`tel:${SITE_PHONE_FALLBACK.replace(/\s/g, '')}`}
+          class="inline-flex items-center gap-2 bg-brand-coral text-white text-sm font-semibold
+                 px-4 py-2.5 rounded-cta shadow-call shrink-0
+                 hover:bg-[#0099BB] active:scale-[0.98] transition-all"
+          aria-label={locationName ? `Call a plumber in ${locationName}` : 'Call a local plumber now'}
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M3.5 2C3.5 2 2 2.5 2 4.5c0 5 5.5 9.5 10 9.5 2 0 2.5-1.5 2.5-1.5l-2-2-1.5.5S9.5 9.5 8 8C6.5 6.5 6 5 6 5l.5-1.5L5 2z" fill="currentColor"/>
+          </svg>
+          <span class="hidden sm:inline">Call Now</span>
+          <span class="sm:hidden">{SITE_PHONE_FALLBACK}</span>
+        </a>
+
+      </div>
+    </header>
+  </div>
+
+  <!-- ── Page Content ────────────────────────────────────────────────────── -->
+  <main id="main-content">
+    <slot />
+  </main>
+
+  <!-- ── Sticky Mobile Tap-to-Call ──────────────────────────────────────── -->
+  <div class="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-brand-canvas border-t border-brand-ice p-3">
+    <a
+      href={`tel:${SITE_PHONE_FALLBACK.replace(/\s/g, '')}`}
+      class="flex items-center justify-center gap-3 w-full bg-brand-coral text-white
+             font-display font-bold text-lg py-4 rounded-cta shadow-call
+             active:scale-[0.98] transition-transform"
+    >
+      <svg width="22" height="22" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M3.5 2C3.5 2 2 2.5 2 4.5c0 5 5.5 9.5 10 9.5 2 0 2.5-1.5 2.5-1.5l-2-2-1.5.5S9.5 9.5 8 8C6.5 6.5 6 5 6 5l.5-1.5L5 2z" fill="currentColor"/>
+      </svg>
+      {locationName ? `Call a Plumber in ${locationName}` : 'Call a Local Plumber Now'}
+    </a>
+  </div>
+
+  <!-- ── Footer ─────────────────────────────────────────────────────────── -->
+  <footer class="bg-brand-navy text-white pb-24 md:pb-0">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+
+      <div>
+        <!-- Logo wordmark matching navbar -->
+        <a href="/" class="flex items-center gap-2 mb-3" aria-label="LocalPlumber.co.uk — Home">
+          <svg width="24" height="24" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+            <circle cx="14" cy="14" r="13" fill="#0A192F" stroke="#00B4D8" stroke-width="1.5"/>
+            <path d="M9 10h10M9 14h10M9 18h6" stroke="#00B4D8" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="19" cy="18" r="2.5" fill="#00B4D8"/>
+          </svg>
+          <span class="font-display font-bold text-base tracking-tight">
+            <span class="text-white">Local</span><span class="text-brand-coral">Plumber</span><span class="text-brand-coral text-sm font-normal">.co.uk</span>
+          </span>
+        </a>
+        <p class="text-sm text-blue-200 leading-relaxed">
+          Connecting London and Home Counties homeowners with one vetted local plumber
+          per postcode area — no bidding, no sharing, just direct connections.
+        </p>
+      </div>
+
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-widest text-blue-300 mb-3">Regions</p>
+        <ul class="space-y-1 text-sm text-blue-100">
+          <li><a href="/london"  class="hover:text-brand-coral transition-colors">London</a></li>
+          <li><a href="/surrey"          class="hover:text-brand-coral transition-colors">Surrey</a></li>
+          <li><a href="/essex"           class="hover:text-brand-coral transition-colors">Essex</a></li>
+          <li><a href="/kent"            class="hover:text-brand-coral transition-colors">Kent</a></li>
+          <li><a href="/hertfordshire"   class="hover:text-brand-coral transition-colors">Hertfordshire</a></li>
+          <li><a href="/berkshire"       class="hover:text-brand-coral transition-colors">Berkshire</a></li>
+          <li><a href="/buckinghamshire" class="hover:text-brand-coral transition-colors">Buckinghamshire</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-widest text-blue-300 mb-3">Information</p>
+        <ul class="space-y-1 text-sm text-blue-100">
+          <li><a href="/about"        class="hover:text-brand-coral transition-colors">About</a></li>
+          <li><a href="/for-plumbers" class="hover:text-brand-coral transition-colors">For Plumbers</a></li>
+          <li><a href="/privacy"      class="hover:text-brand-coral transition-colors">Privacy Policy</a></li>
+          <li><a href="/terms"        class="hover:text-brand-coral transition-colors">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="border-t border-white/10 py-4">
+      <p class="text-center text-xs text-blue-300">
+        &copy; {new Date().getFullYear()} LocalPlumber.co.uk — A Rank Local Agency platform. All rights reserved.
+      </p>
+    </div>
+  </footer>
+
+</body>
+</html>

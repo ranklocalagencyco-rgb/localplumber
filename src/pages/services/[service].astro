@@ -1,0 +1,278 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ServiceCard from '../../components/ServiceCard.astro';
+import Icon from '../../components/Icon.astro';
+import { services, getServicesByCategory } from '../../lib/services';
+import type { Service } from '../../lib/services';
+
+export async function getStaticPaths() {
+  return services.map((s) => ({
+    params: { service: s.slug },
+    props:  { service: s },
+  }));
+}
+
+interface Props { service: Service }
+
+const { service } = Astro.props;
+const related = getServicesByCategory(service.category).filter((s) => s.slug !== service.slug);
+
+const canonicalUrl   = `https://www.localplumber.co.uk/services/${service.slug}`;
+const pageTitle      = `${service.name} | Local ${service.category} Specialists — LocalPlumber.co.uk`;
+const pageDescription = `${service.tagline}. Vetted Gas Safe engineers across London and the Home Counties. One specialist per postcode — direct connection, no call centres.`;
+
+const SITE_PHONE = '0800 000 0000';
+
+const localBusinessSchema = {
+  "@context": "https://schema.org",
+  "@type":    "Service",
+  "name":     service.name,
+  "description": pageDescription,
+  "url":      canonicalUrl,
+  "provider": {
+    "@type": "Organization",
+    "name":  "LocalPlumber.co.uk",
+    "url":   "https://www.localplumber.co.uk",
+  },
+  "areaServed": {
+    "@type": "AdministrativeArea",
+    "name":  "London and the Home Counties",
+  },
+};
+
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type":    "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home",            "item": "https://www.localplumber.co.uk" },
+    { "@type": "ListItem", "position": 2, "name": "Services",        "item": "https://www.localplumber.co.uk/services" },
+    { "@type": "ListItem", "position": 3, "name": service.name,      "item": canonicalUrl },
+  ],
+};
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type":    "FAQPage",
+  "mainEntity": service.faqs.map((faq) => ({
+    "@type":          "Question",
+    "name":           faq.q,
+    "acceptedAnswer": { "@type": "Answer", "text": faq.a },
+  })),
+};
+---
+
+<BaseLayout
+  title={pageTitle}
+  description={pageDescription}
+  canonicalUrl={canonicalUrl}
+  jsonLdSchemas={[localBusinessSchema, breadcrumbSchema, faqSchema]}
+>
+
+  <!-- Breadcrumb -->
+  <nav class="max-w-6xl mx-auto px-4 sm:px-6 py-3" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5 text-xs text-brand-hydro flex-wrap">
+      <li><a href="/" class="hover:underline">Home</a></li>
+      <li aria-hidden="true" class="text-gray-300">›</li>
+      <li><a href="/services" class="hover:underline">Services</a></li>
+      <li aria-hidden="true" class="text-gray-300">›</li>
+      <li class="text-brand-navy font-medium" aria-current="page">{service.name}</li>
+    </ol>
+  </nav>
+
+  <!-- ── Hero ──────────────────────────────────────────────────────────── -->
+  <section style="background: linear-gradient(135deg, #0A192F 0%, #0D2137 50%, #0A192F 100%);">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-20 md:py-28">
+      <div class="max-w-2xl">
+        <p class="text-brand-coral text-xs font-semibold uppercase tracking-widest mb-4">
+          {service.category} Services — London &amp; Home Counties
+        </p>
+        <div class="flex items-start gap-5 mb-6">
+          <span class="w-16 h-16 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+            <Icon name={service.icon} class="w-8 h-8 text-brand-coral" />
+          </span>
+          <h1 class="font-display font-extrabold text-5xl md:text-6xl text-white leading-tight">
+            {service.name}
+          </h1>
+        </div>
+        <p class="text-blue-200 text-xl font-medium mb-4 leading-snug">{service.tagline}</p>
+        <p class="text-blue-200/80 text-base leading-relaxed mb-10">{service.description}</p>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+          <a
+            href={`tel:${SITE_PHONE.replace(/\s/g, '')}`}
+            class="inline-flex items-center justify-center gap-3 bg-brand-coral text-white
+                   font-display font-bold text-lg px-8 py-5 rounded-cta shadow-call
+                   hover:bg-[#0099BB] active:scale-[0.98] transition-all"
+          >
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M3.5 2C3.5 2 2 2.5 2 4.5c0 5 5.5 9.5 10 9.5 2 0 2.5-1.5 2.5-1.5l-2-2-1.5.5S9.5 9.5 8 8C6.5 6.5 6 5 6 5l.5-1.5L5 2z" fill="currentColor"/>
+            </svg>
+            Call Now — {SITE_PHONE}
+          </a>
+          <a
+            href="/#find-area"
+            class="inline-flex items-center justify-center gap-2 border-2 border-white/30
+                   text-white font-semibold text-base px-6 py-4 rounded-cta
+                   hover:border-white hover:bg-white/10 transition-colors"
+          >
+            Find Your Local Specialist →
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── What's Included ───────────────────────────────────────────────── -->
+  <section class="bg-white py-16 md:py-20" aria-labelledby="features-heading">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="grid md:grid-cols-2 gap-12 items-start">
+
+        <div>
+          <h2 id="features-heading" class="font-display font-extrabold text-3xl text-brand-navy mb-2">
+            What's Included
+          </h2>
+          <p class="text-gray-400 mb-8">Every {service.name.toLowerCase()} job covers the following as standard.</p>
+
+          <ul class="space-y-3">
+            {service.features.map((f) => (
+              <li class="flex items-start gap-3">
+                <span class="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-brand-coral/10 flex items-center justify-center" aria-hidden="true">
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <path d="M2 5l2.5 2.5L8 3" stroke="#00B4D8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span class="text-brand-navy text-sm leading-relaxed">{f}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <!-- Rule of One callout -->
+        <div class="bg-brand-navy rounded-2xl p-8">
+          <p class="text-brand-coral font-display font-bold text-xs uppercase tracking-widest mb-3">
+            The Rule of One
+          </p>
+          <h3 class="font-display font-extrabold text-2xl text-white mb-4 leading-snug">
+            One vetted engineer.<br />Your postcode. Every time.
+          </h3>
+          <p class="text-blue-200 text-sm leading-relaxed mb-6">
+            Unlike shared lead platforms, we assign a single Gas Safe partner to each postcode outcode.
+            Your enquiry goes to one specialist — not five competing firms.
+          </p>
+          <div class="space-y-2 mb-6">
+            {[
+              'Gas Safe Registered — legally verified',
+              'DBS checked — background cleared',
+              'Exclusively assigned to your postcode',
+              'No bidding, no auctions, no cold calls',
+            ].map((point) => (
+              <p class="flex items-center gap-2 text-blue-200 text-sm">
+                <span class="text-brand-coral font-bold">✓</span> {point}
+              </p>
+            ))}
+          </div>
+          <a
+            href={`tel:${SITE_PHONE.replace(/\s/g, '')}`}
+            class="flex items-center justify-center gap-2 w-full bg-brand-coral text-white
+                   font-display font-bold text-base py-4 rounded-cta shadow-call
+                   hover:bg-[#0099BB] transition-colors"
+          >
+            Call Now — {SITE_PHONE}
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FAQ ───────────────────────────────────────────────────────────── -->
+  {service.faqs.length > 0 && (
+    <section class="bg-brand-ice py-16 md:py-20" aria-labelledby="faq-heading">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <h2 id="faq-heading" class="font-display font-extrabold text-3xl text-brand-navy mb-2">
+          Frequently Asked Questions
+        </h2>
+        <p class="text-gray-400 mb-10">Common questions about {service.name.toLowerCase()}.</p>
+
+        <div class="max-w-3xl space-y-4">
+          {service.faqs.map((faq) => (
+            <details class="bg-white border border-gray-100 rounded-xl shadow-card group" >
+              <summary class="flex items-center justify-between px-6 py-5 cursor-pointer list-none">
+                <span class="font-display font-semibold text-brand-navy text-base">{faq.q}</span>
+                <svg
+                  width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"
+                  class="shrink-0 ml-4 text-brand-hydro transition-transform group-open:rotate-180"
+                >
+                  <path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </summary>
+              <p class="px-6 pb-5 text-gray-500 text-sm leading-relaxed border-t border-gray-50 pt-4">
+                {faq.a}
+              </p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- ── Related Services ──────────────────────────────────────────────── -->
+  {related.length > 0 && (
+    <section class="bg-white py-16 md:py-20" aria-labelledby="related-heading">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <h2 id="related-heading" class="font-display font-extrabold text-2xl text-brand-navy mb-8">
+          Related {service.category} Services
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {related.map((s) => <ServiceCard service={s} variant="feature" />)}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- ── Find Your Postcode CTA ────────────────────────────────────────── -->
+  <section class="bg-brand-ice py-16 md:py-20 mb-24 md:mb-0 border-t border-gray-100">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 text-center">
+      <h2 class="font-display font-extrabold text-3xl text-brand-navy mb-3">
+        Find your local {service.name.toLowerCase()} specialist
+      </h2>
+      <p class="text-gray-500 mb-6 max-w-xl mx-auto">
+        Enter your postcode to find the exclusive partner covering your area.
+      </p>
+      <form id="service-postcode-form" class="flex max-w-sm mx-auto" novalidate>
+        <input
+          id="service-postcode-input"
+          type="text"
+          placeholder="Your postcode"
+          autocomplete="postal-code"
+          class="flex-1 px-5 py-4 text-base border-2 border-gray-200 rounded-l-md
+                 focus:outline-none focus:border-brand-coral uppercase transition-colors"
+        />
+        <button
+          type="submit"
+          class="bg-brand-coral text-white font-bold px-6 py-4 rounded-r-md
+                 hover:bg-[#0099BB] transition-colors whitespace-nowrap"
+        >
+          Find →
+        </button>
+      </form>
+    </div>
+  </section>
+
+</BaseLayout>
+
+<script>
+  const form = document.getElementById('service-postcode-form');
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = document.getElementById('service-postcode-input') as HTMLInputElement;
+    const value = input.value.trim().toUpperCase();
+    if (!value) return;
+    const outcode = value.split(' ')[0];
+    if (outcode.length >= 2) {
+      window.location.href = `/postcode/${outcode.toLowerCase()}`;
+    }
+  });
+</script>

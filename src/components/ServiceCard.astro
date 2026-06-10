@@ -1,0 +1,49 @@
+---
+import type { Service } from '../lib/services';
+import Icon from './Icon.astro';
+
+export interface Props {
+  service: Service;
+  /** 'grid' = compact index card, 'feature' = larger with description */
+  variant?: 'grid' | 'feature';
+}
+
+const { service, variant = 'grid' } = Astro.props;
+---
+
+{variant === 'grid' ? (
+  <a
+    href={`/services/${service.slug}`}
+    class="p-5 bg-white border border-gray-100 rounded-lg shadow-card
+           hover:border-brand-hydro hover:shadow-md transition-all text-center group"
+  >
+    <div class="flex justify-center mb-3">
+      <span class="w-10 h-10 rounded-lg bg-brand-ice flex items-center justify-center group-hover:bg-brand-coral/10 transition-colors">
+        <Icon name={service.icon} class="w-5 h-5 text-brand-hydro group-hover:text-brand-coral transition-colors" />
+      </span>
+    </div>
+    <p class="text-brand-navy font-semibold text-sm group-hover:text-brand-hydro transition-colors">
+      {service.name}
+    </p>
+    <p class="text-gray-400 text-xs mt-1 leading-snug">{service.tagline.split('—')[0].trim()}</p>
+  </a>
+) : (
+  <a
+    href={`/services/${service.slug}`}
+    class="flex gap-4 p-6 bg-white border border-gray-100 rounded-xl shadow-card
+           hover:border-brand-hydro hover:shadow-md transition-all group"
+  >
+    <span class="w-11 h-11 rounded-lg bg-brand-ice flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-brand-coral/10 transition-colors">
+      <Icon name={service.icon} class="w-5 h-5 text-brand-hydro group-hover:text-brand-coral transition-colors" />
+    </span>
+    <div>
+      <p class="font-display font-bold text-brand-navy text-base mb-1 group-hover:text-brand-hydro transition-colors">
+        {service.name}
+      </p>
+      <p class="text-xs text-brand-coral font-semibold uppercase tracking-wide mb-2">
+        {service.category}
+      </p>
+      <p class="text-gray-500 text-sm leading-relaxed line-clamp-2">{service.tagline}</p>
+    </div>
+  </a>
+)}

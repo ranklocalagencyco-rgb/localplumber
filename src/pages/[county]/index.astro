@@ -1,0 +1,181 @@
+---
+// src/pages/[county]/index.astro
+// County hub page — one per county, e.g. /surrey, /greater-london
+// SSG: renders at build time, links to all towns within the county.
+
+export const prerender = true;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ServiceCard from '../../components/ServiceCard.astro';
+import { getAllCounties, getTownsByCountySlug } from '../../lib/geo';
+import { getServicesByCategory } from '../../lib/services';
+import type { County, Town } from '../../types/index';
+
+export async function getStaticPaths() {
+  const counties = await getAllCounties();
+
+  // Fetch towns for every county in parallel — faster than sequential awaits
+  const paths = await Promise.all(
+    counties.map(async (county) => {
+      const towns = await getTownsByCountySlug(county.slug);
+      return {
+        params: { county: county.slug },
+        props:  { county, towns } as { county: County; towns: Town[] },
+      };
+    })
+  );
+
+  return paths;
+}
+
+interface Props {
+  county: County;
+  towns:  Town[];
+}
+
+const { county, towns } = Astro.props;
+
+const plumbingServices = getServicesByCategory('Plumbing');
+const heatingServices  = getServicesByCategory('Heating');
+const bathroomServices = getServicesByCategory('Bathrooms');
+
+const pageTitle       = `Local Plumbers in ${county.name} | Find Your Area`;
+const pageDescription = `Find your exclusive local plumber in ${county.name}. One vetted Gas Safe specialist per postcode area — direct connection, no shared leads.`;
+const canonicalUrl    = `https://www.localplumber.co.uk/${county.slug}`;
+
+const countySchema = {
+  "@context": "https://schema.org",
+  "@type":    "CollectionPage",
+  "name":     pageTitle,
+  "url":      canonicalUrl,
+  "description": pageDescription,
+  "areaServed": {
+    "@type": "AdministrativeArea",
+    "name":  county.name
+  }
+};
+
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type":    "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home",       "item": "https://www.localplumber.co.uk" },
+    { "@type": "ListItem", "position": 2, "name": county.name,  "item": canonicalUrl }
+  ]
+};
+---
+
+<BaseLayout
+  title={pageTitle}
+  description={pageDescription}
+  canonicalUrl={canonicalUrl}
+  jsonLdSchemas={[countySchema, breadcrumbSchema]}
+  locationName={county.name}
+>
+
+  <!-- Breadcrumb -->
+  <nav class="max-w-6xl mx-auto px-4 sm:px-6 py-3" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5 text-xs text-brand-hydro">
+      <li><a href="/" class="hover:underline">Home</a></li>
+      <li aria-hidden="true" class="text-gray-300">›</li>
+      <li class="text-brand-navy font-medium" aria-current="page">{county.name}</li>
+    </ol>
+  </nav>
+
+  <!-- Hero -->
+  <section class="max-w-6xl mx-auto px-4 sm:px-6 py-16 md:py-20">
+    <h1 class="text-hero font-display font-extrabold text-brand-navy mb-4">
+      Plumbers in<br />
+      <span class="text-brand-hydro">{county.name}</span>
+    </h1>
+    <p class="text-lg text-gray-600 max-w-xl leading-relaxed">
+      Select your town to reach the exclusive vetted plumber covering your postcode.
+      One specialist per area — no bidding, no shared numbers.
+    </p>
+  </section>
+
+  <!-- Town Grid -->
+  <section class="max-w-6xl mx-auto px-4 sm:px-6 py-16 md:py-20" aria-labelledby="towns-heading">
+    <h2 id="towns-heading" class="text-h2 font-display font-bold text-brand-navy mb-6">
+      Towns in {county.name}
+      <span class="text-base font-normal text-gray-400 ml-2">({towns.length} areas)</span>
+    </h2>
+
+    {towns.length === 0 ? (
+      <div class="p-8 bg-brand-ice rounded-lg text-center">
+        <p class="text-gray-500">No towns listed yet for {county.name}.</p>
+        <p class="text-sm text-gray-400 mt-1">Coverage is being added — check back shortly.</p>
+      </div>
+    ) : (
+      <ul class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3" role="list">
+        {towns.map((town) => (
+          <li>
+            <a
+              href={`/${county.slug}/${town.slug}`}
+              class="block px-4 py-3 bg-white border border-gray-100 rounded-md
+                     text-sm font-medium text-brand-navy shadow-card
+                     hover:border-brand-hydro hover:text-brand-hydro
+                     hover:shadow-none transition-all"
+            >
+              {town.name}
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>
+
+  <!-- Services Grid -->
+  <section class="bg-white py-16 md:py-20 border-t border-gray-100" aria-labelledby="services-heading">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <h2 id="services-heading" class="font-display font-extrabold text-3xl text-brand-navy mb-2">
+        Services in {county.name}
+      </h2>
+      <p class="text-gray-400 text-base mb-12">
+        The exclusive partner covering your postcode handles all residential and commercial jobs.
+      </p>
+
+      <div class="mb-10">
+        <p class="text-xs font-semibold uppercase tracking-widest text-brand-hydro mb-4">Plumbing</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {plumbingServices.map((s) => <ServiceCard service={s} variant="feature" />)}
+        </div>
+      </div>
+
+      <div class="mb-10">
+        <p class="text-xs font-semibold uppercase tracking-widest text-brand-hydro mb-4">Heating</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {heatingServices.map((s) => <ServiceCard service={s} variant="feature" />)}
+        </div>
+      </div>
+
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-widest text-brand-hydro mb-4">Bathrooms</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {bathroomServices.map((s) => <ServiceCard service={s} variant="feature" />)}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- County-level CTA strip -->
+  <section class="bg-brand-navy py-16 md:py-20 mb-24 md:mb-0">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 text-center">
+      <h2 class="text-h2 font-display font-bold text-white mb-3">
+        Emergency? Call Now.
+      </h2>
+      <p class="text-blue-200 mb-6">
+        Can't find your town? Call the {county.name} line — we'll route you to the right specialist.
+      </p>
+      <a
+        href="tel:08000000000"
+        class="inline-flex items-center gap-3 bg-brand-coral text-white
+               font-display font-bold text-xl px-10 py-5 rounded-cta shadow-call
+               hover:bg-[#0099BB] active:scale-[0.98] transition-all"
+      >
+        Call {county.name} — 0800 000 0000
+      </a>
+    </div>
+  </section>
+
+</BaseLayout>

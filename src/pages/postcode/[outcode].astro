@@ -1,0 +1,203 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Icon from '../../components/Icon.astro';
+import { getAllOutcodesWithRelations } from '../../lib/geo';
+import type { OutcodeWithRelations } from '../../types/index';
+
+export async function getStaticPaths() {
+  const outcodes = await getAllOutcodesWithRelations();
+
+  return outcodes.map((o) => ({
+    params: { outcode: o.outcode.toLowerCase() },
+    props:  { outcodeData: o },
+  }));
+}
+
+interface Props {
+  outcodeData: OutcodeWithRelations;
+}
+
+const { outcodeData } = Astro.props;
+const { outcode, towns: town, counties: county } = outcodeData;
+
+const pageTitle       = `Emergency Plumber ${outcode} | Local Plumbers in ${outcode} Postcode`;
+const pageDescription = `Find your exclusive local plumber for the ${outcode} postcode area in ${town.name}, ${county.name}. One vetted Gas Safe specialist — direct connection, 24/7 emergency response.`;
+const canonicalUrl    = `https://www.localplumber.co.uk/postcode/${outcode.toLowerCase()}`;
+
+const localBusinessSchema = {
+  "@context":    "https://schema.org",
+  "@type":       "LocalBusiness",
+  "name":        `LocalPlumber.co.uk — ${outcode}`,
+  "description": pageDescription,
+  "url":         canonicalUrl,
+  "telephone":   "+448000000000",
+  "areaServed": {
+    "@type": "AdministrativeArea",
+    "name":  outcode,
+    "containedIn": {
+      "@type": "City",
+      "name":  town.name,
+      "containedIn": {
+        "@type": "AdministrativeArea",
+        "name":  county.name
+      }
+    }
+  },
+};
+
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type":    "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home",       "item": "https://www.localplumber.co.uk" },
+    { "@type": "ListItem", "position": 2, "name": county.name,  "item": `https://www.localplumber.co.uk/${county.slug}` },
+    { "@type": "ListItem", "position": 3, "name": town.name,    "item": `https://www.localplumber.co.uk/${county.slug}/${town.slug}` },
+    { "@type": "ListItem", "position": 4, "name": outcode,      "item": canonicalUrl }
+  ]
+};
+
+const AREA_PHONE = '0800 000 0000';
+
+const serviceCards = [
+  { icon: 'bolt',               name: 'Emergency Plumbing', desc: '24-hour response for leaks and bursts.',   href: '/services/24-hour-emergency-plumber'    },
+  { icon: 'exclamation-circle', name: 'Boiler Repair',      desc: 'Same-day diagnosis and repair.',           href: '/services/emergency-boiler-repair'       },
+  { icon: 'funnel',             name: 'Blocked Drains',     desc: 'Jetting and rodding for all drain types.', href: '/services/blocked-drains'               },
+  { icon: 'squares',            name: 'Bathroom Fitting',   desc: 'Full installation and suite replacement.', href: '/services/bathroom-fitting-installation' },
+  { icon: 'fire',               name: 'Central Heating',    desc: 'Radiators, pumps, valves and controls.',   href: '/services/central-heating-service'       },
+  { icon: 'circle',             name: 'Gas Safety',         desc: 'CP12 certificates for landlords.',         href: '/services/boiler-repair-service'         },
+];
+---
+
+<BaseLayout
+  title={pageTitle}
+  description={pageDescription}
+  canonicalUrl={canonicalUrl}
+  jsonLdSchemas={[localBusinessSchema, breadcrumbSchema]}
+  locationName={outcode}
+>
+
+  <!-- Breadcrumb -->
+  <nav class="max-w-6xl mx-auto px-4 sm:px-6 py-3" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5 text-xs text-brand-hydro flex-wrap">
+      <li><a href="/" class="hover:underline">Home</a></li>
+      <li aria-hidden="true" class="text-gray-300">›</li>
+      <li><a href={`/${county.slug}`} class="hover:underline">{county.name}</a></li>
+      <li aria-hidden="true" class="text-gray-300">›</li>
+      <li><a href={`/${county.slug}/${town.slug}`} class="hover:underline">{town.name}</a></li>
+      <li aria-hidden="true" class="text-gray-300">›</li>
+      <li class="text-brand-navy font-medium" aria-current="page">{outcode}</li>
+    </ol>
+  </nav>
+
+  <!-- Hero -->
+  <section class="max-w-6xl mx-auto px-4 sm:px-6 pt-10 pb-12 md:pt-16 md:pb-16">
+    <div class="max-w-3xl">
+      <p class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-brand-hydro mb-4">
+        <span class="w-2 h-2 rounded-full bg-green-400 inline-block animate-pulse" aria-hidden="true"></span>
+        Postcode {outcode} — {town.name}, {county.name}
+      </p>
+
+      <h1 class="font-display font-extrabold text-5xl sm:text-6xl text-brand-navy leading-tight mb-4">
+        Plumber in<br />
+        <span class="text-brand-hydro">{outcode}</span>
+      </h1>
+
+      <p class="text-lg text-gray-600 max-w-xl mb-8 leading-relaxed">
+        One Gas Safe vetted plumber covers the {outcode} postcode area in {town.name}.
+        Direct connection — no call centres, no bidding.
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-3">
+        <a
+          href={`tel:${AREA_PHONE.replace(/\s/g, '')}`}
+          class="inline-flex items-center justify-center gap-3 bg-brand-coral text-white
+                 font-display font-bold text-xl px-8 py-5 rounded-cta shadow-call
+                 hover:bg-[#0099BB] active:scale-[0.98] transition-all"
+        >
+          <svg width="22" height="22" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M3.5 2C3.5 2 2 2.5 2 4.5c0 5 5.5 9.5 10 9.5 2 0 2.5-1.5 2.5-1.5l-2-2-1.5.5S9.5 9.5 8 8C6.5 6.5 6 5 6 5l.5-1.5L5 2z" fill="currentColor"/>
+          </svg>
+          Call Now — {AREA_PHONE}
+        </a>
+        <a
+          href={`/${county.slug}/${town.slug}#quote-form`}
+          class="inline-flex items-center justify-center gap-2 border-2 border-brand-navy
+                 text-brand-navy font-semibold text-base px-6 py-4 rounded-cta
+                 hover:bg-brand-ice transition-colors"
+        >
+          Request a Quote
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Location detail strip -->
+  <section class="bg-brand-ice py-8 border-y border-brand-hydro/10">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <dl class="grid grid-cols-2 sm:grid-cols-4 gap-6 text-sm">
+        <div>
+          <dt class="text-xs font-semibold uppercase tracking-widest text-brand-hydro mb-1">Postcode</dt>
+          <dd class="font-display font-bold text-brand-navy text-lg">{outcode}</dd>
+        </div>
+        <div>
+          <dt class="text-xs font-semibold uppercase tracking-widest text-brand-hydro mb-1">Town</dt>
+          <dd class="font-display font-bold text-brand-navy text-lg">{town.name}</dd>
+        </div>
+        <div>
+          <dt class="text-xs font-semibold uppercase tracking-widest text-brand-hydro mb-1">County</dt>
+          <dd class="font-display font-bold text-brand-navy text-lg">{county.name}</dd>
+        </div>
+        <div>
+          <dt class="text-xs font-semibold uppercase tracking-widest text-brand-hydro mb-1">Response</dt>
+          <dd class="font-display font-bold text-brand-navy text-lg">Under 60 min</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- Services strip -->
+  <section class="bg-white py-10 border-t border-gray-100">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <p class="text-xs font-semibold uppercase tracking-widest text-brand-hydro mb-6">
+        Services covered in {outcode}
+      </p>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {serviceCards.map(card => (
+          <a
+            href={card.href}
+            class="p-4 bg-white border border-gray-100 rounded-xl text-center
+                   hover:border-brand-coral transition-colors group"
+          >
+            <div class="flex justify-center mb-2">
+              <span class="w-9 h-9 rounded-lg bg-brand-ice flex items-center justify-center
+                           group-hover:bg-brand-coral/10 transition-colors">
+                <Icon name={card.icon} class="w-4 h-4 text-brand-hydro group-hover:text-brand-coral transition-colors" />
+              </span>
+            </div>
+            <p class="text-brand-navy font-semibold text-xs mb-1 group-hover:text-brand-coral transition-colors leading-snug">
+              {card.name}
+            </p>
+            <p class="text-gray-400 text-xs leading-snug">{card.desc}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Link to full town page -->
+  <section class="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+    <p class="text-gray-500 mb-4">
+      The {outcode} postcode is served by our exclusive {town.name} partner.
+      View the full service page for {town.name}:
+    </p>
+    <a
+      href={`/${county.slug}/${town.slug}`}
+      class="inline-flex items-center gap-2 text-brand-hydro font-semibold hover:underline"
+    >
+      Emergency Plumber {town.name} →
+    </a>
+  </section>
+
+</BaseLayout>
