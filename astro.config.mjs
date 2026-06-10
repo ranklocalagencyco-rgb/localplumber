@@ -1,11 +1,11 @@
 import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
-import node from '@astrojs/node';
+import vercel from '@astrojs/vercel';
 import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
   output: 'server',
-  adapter: node({ mode: 'standalone' }),
+  adapter: vercel(),
   integrations: [sitemap()],
   site: 'https://www.localplumber.co.uk',
   vite: {
