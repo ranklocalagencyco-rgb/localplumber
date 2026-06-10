@@ -1,5 +1,11 @@
 ---
 import '../styles/global.css';
+import { getServicesByCategory } from '../lib/services';
+
+const plumbingServices  = getServicesByCategory('Plumbing');
+const heatingServices   = getServicesByCategory('Heating');
+const drainServices     = getServicesByCategory('Drains');
+const bathroomServices  = getServicesByCategory('Bathrooms');
 
 export interface Props {
   title: string;
@@ -254,10 +260,71 @@ const navItems = [
 
   <!-- ── Footer ─────────────────────────────────────────────────────────── -->
   <footer class="bg-brand-navy text-white pb-24 md:pb-0">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+
+    <!-- Services block -->
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 pt-12 pb-10 border-b border-white/10">
+      <p class="text-xs font-semibold uppercase tracking-widest text-blue-300 mb-6">Our Services</p>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-6">
+
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-widest text-brand-coral mb-3">Plumbing</p>
+          <ul class="space-y-1.5">
+            {plumbingServices.map((s) => (
+              <li>
+                <a href={`/services/${s.slug}`} class="text-sm text-blue-200 hover:text-white transition-colors leading-snug block">
+                  {s.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-widest text-brand-coral mb-3">Heating</p>
+          <ul class="space-y-1.5">
+            {heatingServices.map((s) => (
+              <li>
+                <a href={`/services/${s.slug}`} class="text-sm text-blue-200 hover:text-white transition-colors leading-snug block">
+                  {s.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-widest text-brand-coral mb-3">Drains</p>
+          <ul class="space-y-1.5">
+            {drainServices.map((s) => (
+              <li>
+                <a href={`/services/${s.slug}`} class="text-sm text-blue-200 hover:text-white transition-colors leading-snug block">
+                  {s.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-widest text-brand-coral mb-3">Bathrooms</p>
+          <ul class="space-y-1.5">
+            {bathroomServices.map((s) => (
+              <li>
+                <a href={`/services/${s.slug}`} class="text-sm text-blue-200 hover:text-white transition-colors leading-snug block">
+                  {s.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Brand / Regions / Info -->
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10 grid grid-cols-1 md:grid-cols-3 gap-8">
 
       <div>
-        <!-- Logo wordmark matching navbar -->
         <a href="/" class="flex items-center gap-2 mb-3" aria-label="LocalPlumber.co.uk — Home">
           <svg width="24" height="24" viewBox="0 0 28 28" fill="none" aria-hidden="true">
             <circle cx="14" cy="14" r="13" fill="#0A192F" stroke="#00B4D8" stroke-width="1.5"/>
@@ -277,7 +344,7 @@ const navItems = [
       <div>
         <p class="text-xs font-semibold uppercase tracking-widest text-blue-300 mb-3">Regions</p>
         <ul class="space-y-1 text-sm text-blue-100">
-          <li><a href="/london"  class="hover:text-brand-coral transition-colors">London</a></li>
+          <li><a href="/london"          class="hover:text-brand-coral transition-colors">London</a></li>
           <li><a href="/surrey"          class="hover:text-brand-coral transition-colors">Surrey</a></li>
           <li><a href="/essex"           class="hover:text-brand-coral transition-colors">Essex</a></li>
           <li><a href="/kent"            class="hover:text-brand-coral transition-colors">Kent</a></li>
@@ -296,6 +363,7 @@ const navItems = [
           <li><a href="/terms"        class="hover:text-brand-coral transition-colors">Terms of Service</a></li>
         </ul>
       </div>
+
     </div>
 
     <div class="border-t border-white/10 py-4">
