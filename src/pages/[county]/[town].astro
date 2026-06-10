@@ -2,9 +2,10 @@
 export const prerender = true;
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import Icon from '../../components/Icon.astro';
+import ServiceCard from '../../components/ServiceCard.astro';
 import { supabase } from '../../lib/supabase';
 import { buildAllTownSchemas, buildFaqItems } from '../../lib/schema-builders';
+import { getServicesByCategory } from '../../lib/services';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -321,16 +322,10 @@ const jsonLdSchemas = buildAllTownSchemas({
   partnerPhone,
 });
 
-// ── Service cards ─────────────────────────────────────────────────────────────
-
-const serviceCards = [
-  { icon: 'bolt',             name: 'Emergency Plumbing',  desc: '24-hour response for leaks and bursts.',     href: '/services/24-hour-emergency-plumber'    },
-  { icon: 'exclamation-circle', name: 'Boiler Repair',     desc: 'Same-day diagnosis and repair.',             href: '/services/emergency-boiler-repair'       },
-  { icon: 'funnel',           name: 'Blocked Drains',      desc: 'Jetting and rodding for all drain types.',   href: '/services/blocked-drains'               },
-  { icon: 'squares',          name: 'Bathroom Fitting',    desc: 'Full installation and suite replacement.',   href: '/services/bathroom-fitting-installation' },
-  { icon: 'fire',             name: 'Central Heating',     desc: 'Radiators, pumps, valves and controls.',     href: '/services/central-heating-service'       },
-  { icon: 'circle',           name: 'Gas Safety',          desc: 'CP12 certificates for landlords.',           href: '/services/boiler-repair-service'         },
-];
+const plumbingServices  = getServicesByCategory('Plumbing');
+const heatingServices   = getServicesByCategory('Heating');
+const drainServices     = getServicesByCategory('Drains');
+const bathroomServices  = getServicesByCategory('Bathrooms');
 ---
 
 <BaseLayout
@@ -436,28 +431,40 @@ const serviceCards = [
     </div>
   </section>
 
-  <!-- ── Section 2: Services strip ────────────────────────────────────────── -->
-  <section class="bg-white py-10 border-t border-gray-100">
+  <!-- ── Section 2: Services ──────────────────────────────────────────────── -->
+  <section class="bg-white py-16 border-t border-gray-100" aria-labelledby="services-town-heading">
     <div class="max-w-6xl mx-auto px-4 sm:px-6">
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {serviceCards.map(card => (
-          <a
-            href={card.href}
-            class="p-4 bg-white border border-gray-100 rounded-xl text-center
-                   hover:border-brand-coral transition-colors group"
-          >
-            <div class="flex justify-center mb-2">
-              <span class="w-9 h-9 rounded-lg bg-brand-ice flex items-center justify-center
-                           group-hover:bg-brand-coral/10 transition-colors">
-                <Icon name={card.icon} class="w-4 h-4 text-brand-hydro group-hover:text-brand-coral transition-colors" />
-              </span>
-            </div>
-            <p class="text-brand-navy font-semibold text-xs mb-1 group-hover:text-brand-coral transition-colors leading-snug">
-              {card.name}
-            </p>
-            <p class="text-gray-400 text-xs leading-snug">{card.desc}</p>
-          </a>
-        ))}
+      <h2 id="services-town-heading" class="font-display font-extrabold text-2xl text-brand-navy mb-2">
+        Services in {town.name}
+      </h2>
+      <p class="text-gray-400 text-sm mb-10">All 23 services covered by your exclusive local partner.</p>
+
+      <div class="mb-10">
+        <p class="text-xs font-semibold uppercase tracking-widest text-brand-hydro mb-4">Plumbing</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {plumbingServices.map((s) => <ServiceCard service={s} variant="grid" />)}
+        </div>
+      </div>
+
+      <div class="mb-10">
+        <p class="text-xs font-semibold uppercase tracking-widest text-brand-hydro mb-4">Heating</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {heatingServices.map((s) => <ServiceCard service={s} variant="grid" />)}
+        </div>
+      </div>
+
+      <div class="mb-10">
+        <p class="text-xs font-semibold uppercase tracking-widest text-brand-hydro mb-4">Drains</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {drainServices.map((s) => <ServiceCard service={s} variant="grid" />)}
+        </div>
+      </div>
+
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-widest text-brand-hydro mb-4">Bathrooms</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {bathroomServices.map((s) => <ServiceCard service={s} variant="grid" />)}
+        </div>
       </div>
     </div>
   </section>
